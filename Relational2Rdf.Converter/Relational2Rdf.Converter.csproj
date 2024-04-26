@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aeolin.AwosFramework" Version="1.2.1" />
+    <PackageReference Include="Aeolin.AwosFramework.Rdf.Lib" Version="0.2.2" />
+    <PackageReference Include="OpenAI" Version="1.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Relational2Rdf.Common.Shims\Relational2Rdf.Common.Shims.csproj" />
+    <ProjectReference Include="..\Relational2Rdf.Common\Relational2Rdf.Common.csproj" />
+    <ProjectReference Include="..\Siard2Rdf.DataSources.Siard\Relational2Rdf.DataSources.Siard.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Resources\dvdrental.siard">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\ech-0165_oe.siard">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\mysql5.6.35_aasen.siard">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\oracle_als_system.siard">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\sakila.siard">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Resources\stapfer.siard">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
