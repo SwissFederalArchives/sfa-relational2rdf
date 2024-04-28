@@ -80,7 +80,6 @@ jobs:
         include:
           - { os: windows-latest, platform: win-x86, extension: .exe }
           - { os: windows-latest, platform: win-x64, extension: .exe }
-          - { os: windows-latest, platform: win-arm, extension: .exe }
           - { os: windows-latest, platform: win-arm64, extension: .exe }
           - { os: ubuntu-latest, platform: linux-x64, extension: "" }
           - { os: ubuntu-latest, platform: linux-arm, extension: "" }
