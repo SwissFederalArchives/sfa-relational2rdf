@@ -32,7 +32,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: 7.0      
+          dotnet-version: 8.0      
 
       - name: Save Version
         run: echo "PROJECT_VERSION=$(grep -oP '(?<=<VersionPrefix>).*?(?=</VersionPrefix>)' ./Siard2Rdf/Siard2Rdf.csproj)" >> $GITHUB_ENV 
