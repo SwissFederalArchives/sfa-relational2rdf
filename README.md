@@ -54,7 +54,7 @@ Default JSON:
 | BiDirectionalReferences        | True                                      | If Relationships should be bi-directional or only from foreign-key holder perspective                                                     |
 
 ## Basic Usage
-`Relational2Rdf(.exe) siard [Siard File] --table-config table-config.json --threads 8 --ai-key <your open ai key>`
+`Relational2Rdf.Cli(.exe) siard [Siard File] --table-config table-config.json --threads 8 --ai-key <your open ai key>`
 
 ## Download
 https://github.com/fhgr-retrolab/Relational2Rdf/releases/tag/v1.0.0
