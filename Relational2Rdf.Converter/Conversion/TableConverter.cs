@@ -40,7 +40,7 @@ namespace Relational2Rdf.Converter.Conversion
 			}
 		}
 
-		public async Task ConvertAsync(Action<int> progressCallback = null)
+		public async Task ConvertAsync(int progressResolution = 1000, Action<int> progressCallback = null)
 		{
 			if (_settings.ConvertMetadata)
 				WriteTypeMetadata();
@@ -69,7 +69,7 @@ namespace Relational2Rdf.Converter.Conversion
 					WriteReferences(key, meta, row, subject);
 					_writer.EndSubject(subject);
 					count++;
-					if (count % 1000 == 0)
+					if (count % progressResolution == 0)
 						progressCallback?.Invoke(count);
 				}
 				record.Stop($"Read and converted {_reader.Table.RowCount} rows");

@@ -21,7 +21,7 @@ namespace Relational2Rdf.Converter
 {
 	public static class Converter
 	{
-		private static List<Runner<(ISchema, ITable), bool, ConversionEngine>> _runners = new List<Runner<(ISchema, ITable), bool, ConversionEngine>>();
+		private static List<Runner<(ISchema schema, ITable table), bool, ConversionEngine>> _runners = new List<Runner<(ISchema, ITable), bool, ConversionEngine>>();
 		private static List<ConversionEngine> _engines = new List<ConversionEngine>();
 		private static RunnerGroup<(ISchema, ITable), bool, ConversionEngine> _group;
 		private static AutoResetEvent _updateTrigger = new AutoResetEvent(false);
@@ -30,7 +30,7 @@ namespace Relational2Rdf.Converter
 
 		private static void setupRunners(int runnerCount, ConversionContext context, ITripletWriter writer, ConversionSettings settings)
 		{
-			_group = new RunnerGroup<(ISchema, ITable), bool, ConversionEngine>("ConversionEngineRunners", (engine, input) => engine.ConvertAsync(input.Item1, input.Item2).Result);
+			_group = new RunnerGroup<(ISchema schema, ITable table), bool, ConversionEngine>("ConversionEngineRunners", (engine, input) => engine.ConvertAsync(input.schema, input.table).Result);
 			for (int i = 0; i < runnerCount; i++)
 			{
 				var engine = new ConversionEngine(context, writer, settings);
@@ -60,13 +60,13 @@ namespace Relational2Rdf.Converter
 		}
 
 		private const string SHADES = "░▒▓█";
-		private static string renderEngineState(ConversionEngine engine, int maxWidth)
+		private static string renderProgressBar(string description, double progress, int maxWidth)
 		{
 			var maxBarLen = maxWidth - 30; // 30 = 2 * 1 divider + 20 chars name + 8 chars percentage
-			if (engine.CurrentTable == null)
-				return "No Job".Pad(20);
+			if (description == null)
+				description = "No Job";
 
-			var percentage = engine.Progress;
+			var percentage = progress;
 			var virtualFilledLen = (int)((maxBarLen*SHADES.Length)*percentage);
 			var filledLen = virtualFilledLen / SHADES.Length;
 			var overShoot = virtualFilledLen % SHADES.Length;
@@ -75,7 +75,7 @@ namespace Relational2Rdf.Converter
 				bar += SHADES[overShoot-1];
 
 			bar += new string(' ', maxBarLen - bar.Length);
-			return $"{engine.CurrentTable.Name.Pad(20)}|{bar}| {(percentage*100):000.00}%";
+			return $"{description.Pad(20)}|{bar}| {percentage*100:000.00}%";
 		}
 
 		private static void updateDisplay(int top, int tableCount, bool quiet)
@@ -84,14 +84,15 @@ namespace Relational2Rdf.Converter
 				return;
 
 			var builder = new StringBuilder();
-			builder.AppendLine($"Processed Tables: {_converted}/{tableCount}");
-			builder.AppendLine(new string('-', Console.WindowWidth-1));
-			for (int i = 0; i < _engines.Count; i++)
+			builder.AppendLine($"Conversion Ongoing, Queue: {string.Join(", ", _group.Jobs.Select(x => x.Item2.Name))}".Pad(Console.WindowWidth));
+			builder.AppendLine(renderProgressBar($"Total {_converted}/{tableCount}", (double)_converted / tableCount, Console.WindowWidth));
+			builder.AppendLine(new string('-', Console.WindowWidth));
+			for (int i = 0; i < Math.Min(_engines.Count, (Console.WindowHeight / 2) - 3); i++)
 			{
 				var engine = _engines[i];
-				builder.AppendLine(renderEngineState(engine, Console.WindowWidth - 1));
+				builder.AppendLine(renderProgressBar(engine.CurrentTable?.Name, engine.Progress, Console.WindowWidth));
 			}
-			Console.SetCursorPosition(0, top+1);
+			Console.SetCursorPosition(0, 0);
 			Console.Write(builder.ToString());
 		}
 
@@ -101,10 +102,10 @@ namespace Relational2Rdf.Converter
 			var tables = new List<TableShim>();
 			var schemas = new List<SchemaShim>();
 
-			foreach(var schema in dataSource.Schemas)
+			foreach (var schema in dataSource.Schemas)
 			{
 				tables.Clear();
-				foreach(var table in schema.Tables)
+				foreach (var table in schema.Tables)
 				{
 					var fKeys = allFKeys.Where(x => x.FromSchema == schema.Name && x.FromTable == table.Name).ToArray();
 					tables.Add(new TableShim(table, fKeys));
@@ -116,12 +117,16 @@ namespace Relational2Rdf.Converter
 			return new RelationalDatasourceShim(dataSource, schemas);
 		}
 
-		public static async Task ConvertAsync(FileInfo file, DirectoryInfo output, ConversionSettings settings)
+		public static async Task<string> ConvertAsync(IRelationalDataSource archive, DirectoryInfo output, ConversionSettings settings)
 		{
-			var reader = new SiardFileReader();
-			var archive = await reader.ReadAsync(file.FullName);
-			var writer = WriterFactory.TurtleWriter(Path.Join(output.FullName, file.Name + ".ttl"));
-			var quiet = false;
+			Console.CancelKeyPress += (s, e) =>
+			{
+				_group.StopAll();
+				e.Cancel = true;
+			};
+
+			string outputFile = Path.Join(output.FullName, settings.FileName ?? archive.Name + ".ttl");
+			var writer = WriterFactory.TurtleWriter(outputFile);
 
 			var top = Console.CursorTop;
 			var tableCount = archive.Schemas.Sum(x => x.Tables.Count());
@@ -134,7 +139,7 @@ namespace Relational2Rdf.Converter
 			var fkCount = archive.Schemas.SelectMany(x => x.Tables).SelectMany(x => x.ForeignKeys).Count();
 			if (fkCount == 0 && tableCount > 1)
 			{
-				using(Profiler.Trace(nameof(Converter), "RestoreForeignKeys"))
+				using (Profiler.Trace(nameof(Converter), "RestoreForeignKeys"))
 				{
 					archive = await ReconstructForeignKeysAsync(archive, aiMagic);
 				}
@@ -151,22 +156,35 @@ namespace Relational2Rdf.Converter
 			_group.OnResult += groupOnResult;
 			_group.OnError += groupOnError;
 			_group.QueueJobs(toConvert);
-			Console.CursorVisible = false;
+
+			if (settings.ConsoleOutput)
+			{
+				Console.Clear();
+				Console.CursorVisible = false;
+			}
+
 			using (Profiler.Trace(nameof(Converter), "Conversion"))
 			{
 				while (_converted + _failed < toConvert.Count)
 				{
 					_updateTrigger.WaitOne();
-					updateDisplay(top, toConvert.Count, quiet);
+					updateDisplay(top, toConvert.Count, settings.ConsoleOutput == false);
 				}
 			}
-			updateDisplay(top, toConvert.Count, quiet);
-			Console.SetCursorPosition(0, top+_engines.Count+3);
-			Console.CursorVisible = true;
+
+			updateDisplay(top, toConvert.Count, settings.ConsoleOutput == false);
+
+			if (settings.ConsoleOutput)
+			{
+				Console.SetCursorPosition(0, 0);
+				Console.CursorVisible = true;
+				Console.Clear();
+			}
 
 			archive.Dispose();
 			writer.Dispose();
 			_group.StopAll();
+			return outputFile;
 		}
 	}
 }

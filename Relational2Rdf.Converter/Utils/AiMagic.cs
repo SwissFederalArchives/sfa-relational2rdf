@@ -1,17 +1,10 @@
 ﻿using OpenAI_API;
 using OpenAI_API.Chat;
-using Relation2Rdf.Common.Shims;
 using Relational2Rdf.Common.Abstractions;
-using System;
 using System.Collections.Frozen;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
 namespace Relational2Rdf.Converter.Utils
 {

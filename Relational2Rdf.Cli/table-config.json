@@ -1,0 +1,8 @@
+﻿{
+  "MaxBlobLength": 134217728,
+  "MaxBlobLengthBeforeCompression": 8192,
+  "BlobCompressionLevel": "SmallestSize",
+  "BlobToLargeErrorValue": "Error Blob was to large during conversion",
+  "ConvertMetadata": false,
+  "BiDirectionalReferences": true
+}

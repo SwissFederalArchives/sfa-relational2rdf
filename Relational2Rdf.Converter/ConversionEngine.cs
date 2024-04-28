@@ -37,7 +37,7 @@ namespace Relational2Rdf.Converter
 			CurrentTable = table;
 			using var reader = _context.DataSource.GetReader(schema, table);
 			var tableConverter = new TableConverter(_context, _writer, reader, _settings.TableSettings);
-			await tableConverter.ConvertAsync((prog) =>
+			await tableConverter.ConvertAsync(Math.Min(1000, Math.Max(1, table.RowCount / 10)), (prog) =>
 			{
 				Current = prog;
 				OnProgress?.Invoke(this);
@@ -45,7 +45,7 @@ namespace Relational2Rdf.Converter
 
 			Current = table.RowCount;
 			OnProgress?.Invoke(this);
-			//CurrentTable = null;
+			CurrentTable = null;
 			return true;
 		}
 	}

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Relational2Rdf.Converter.Conversion.ReferenceMeta
 {
-    public class MultiKeyReferenceMeta : IReferenceMeta
+	public class MultiKeyReferenceMeta : IReferenceMeta
 	{
 		public IRI ForwardPredicate { get; init; }
 		public IRI BackwardPredicate { get; init; }
