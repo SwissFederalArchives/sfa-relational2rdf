@@ -1,5 +1,5 @@
-# Siard2Rdf-Ontology
-Copy of old Siard2Rdf Repo
+# Relational2Rdf
+Copy of new rewritten Siard2Rdf Repo
 
 # Description
 Relational2Rdf is a tool which can convert relational datasources to rdf graphs with the help of llm naming.
