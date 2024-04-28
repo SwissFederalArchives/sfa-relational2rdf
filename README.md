@@ -48,7 +48,7 @@ Default JSON:
 |--------------------------------|-------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | MaxBlobLength                  | 134217728 (128mb)                         | What the maximum allowed blob size is, since blobs are included as Base64 string object, set to null to allow any blobs (not recommended) |
 | MaxBlobLenghtBeforeCompression | 8192 (8kb)                                | What the maximum blob size is before it should be gzip compressed, set to null to disable                                                 |
-| BlobCompressionLevel           | SmallestSize                              | Which compression level to use for blob compression, legal values: [`NoCompression`, `Fastest`, `Optimal`, `SmallestSize`]                |
+| BlobCompressionLevel           | SmallestSize                              | Which compression level to use for blob compression, legal values: `NoCompression`, `Fastest`, `Optimal`, `SmallestSize`                  |
 | BlobToLargeErrorValue          | Error Blob was to large during conversion | Placeholder Value if blob was too large, can be set to null, won't be Base64 encoded                                                      |
 | ConvertMetadata                | False                                     | Currently doesn't do anything, will include source metadata, like original table names, in the RDF graph in future                        |
 | BiDirectionalReferences        | True                                      | If Relationships should be bi-directional or only from foreign-key holder perspective                                                     |
