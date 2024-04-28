@@ -19,11 +19,11 @@ The program comes with an CLI inteface allowing the following Parameters
 |----------------|-----------|-------------------------|--------------------------------------------------------------------------------------------------------------------|
 | --threads      | -t        | Processor Count         | How many threads should be used, each thread can convert a table in the datasource at the same time                |
 | --base-iri     | -i        | https://ld.admin.ch/    | BaseIRI for RDF Names in the generated graph                                                                       |
-| --ai-key       | -k        |                         | Key for the AI Endpoint                                                                                            |
+| --ai-key       | -k        | -                       | Key for the AI Endpoint                                                                                            |
 | --ai-endpoint  | -e        | https://api.openai.com/ | Base URL to AI Endpoint, must be OpenAI compatible, for self hostable alternative see [ollama](https://github.com/ollama/ollama) |
 | --ai-model     | -m        | gpt-3.5-turbo           | AI Model to use                                                                                                    |
 | --no-console   |           | False                   | Suppress any console output to default output                                                                      |
-| --table-config | -c        |                         | Path to table config file, default is provided as table-config.json                                                |
+| --table-config | -c        | -                       | Path to table config file, default is provided as table-config.json                                                |
 | --output       | -o        | ./                      | Output Directory for archive                                                                                       |
 | --output-file  | -f        | Name of the datasource  | Name for the resulting archive                                                                                     |
 | --trace        |           | False                   | Whether to save tracing information (Debug information, usefull to track why tool is slow)                         |
