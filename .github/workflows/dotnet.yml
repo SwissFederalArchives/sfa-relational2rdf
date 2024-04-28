@@ -17,7 +17,6 @@ jobs:
         include:
           - { os: windows-latest, platform: win-x86 }
           - { os: windows-latest, platform: win-x64 }
-          - { os: windows-latest, platform: win-arm }
           - { os: windows-latest, platform: win-arm64 }
           - { os: ubuntu-latest, platform: linux-x64 }
           - { os: ubuntu-latest, platform: linux-arm }
