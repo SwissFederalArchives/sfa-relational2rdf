@@ -40,6 +40,7 @@ namespace Relational2Rdf.Converter.Ai
 		{
 			var req = new OllamaRequest(_config.Model, prompt);
 			var result = await _client.PostAsJsonAsync("generate", req, _jsonOptions);
+			result.EnsureSuccessStatusCode();
 			var response = await result.Content.ReadFromJsonAsync<OllamaResponse>();
 			var jsonContent = AiUtils.FindJsonContent(response.Response);
 			return JsonSerializer.Deserialize<T>(jsonContent);
