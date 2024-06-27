@@ -1,6 +1,7 @@
 ﻿using AwosFramework.Rdf.Lib.Core;
 using AwosFramework.Rdf.Lib.Writer;
 using Relational2Rdf.Common.Abstractions;
+using Relational2Rdf.Converter.Ai;
 using Relational2Rdf.Converter.Conversion.Settings;
 using Relational2Rdf.Converter.Utils;
 using System;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Relational2Rdf.Converter.Conversion
 {
-	public class ConversionContext
+    public class ConversionContext
 	{
 		public ConversionSettings Options { get; init; }
 		public IRelationalDataSource DataSource { get; init; }

@@ -22,6 +22,7 @@ The program comes with an CLI inteface allowing the following Parameters
 | --ai-key       | -k        | -                       | Key for the AI Endpoint                                                                                            |
 | --ai-endpoint  | -e        | https://api.openai.com/ | Base URL to AI Endpoint, must be OpenAI compatible, for self hostable alternative see [ollama](https://github.com/ollama/ollama) |
 | --ai-model     | -m        | gpt-3.5-turbo           | AI Model to use                                                                                                    |
+| --ai-service   | -s        | OpenAI                  | Ai Service to use, available Choices: `OpenAI`, `Ollama`                                                           |
 | --no-console   |           | False                   | Suppress any console output to default output                                                                      |
 | --table-config | -c        | -                       | Path to table config file, default is provided as table-config.json                                                |
 | --output       | -o        | ./                      | Output Directory for archive                                                                                       |

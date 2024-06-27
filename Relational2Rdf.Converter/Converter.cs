@@ -5,6 +5,7 @@ using AwosFramework.Rdf.Lib.Writer;
 using Microsoft.Extensions.Options;
 using Relation2Rdf.Common.Shims;
 using Relational2Rdf.Common.Abstractions;
+using Relational2Rdf.Converter.Ai;
 using Relational2Rdf.Converter.Conversion;
 using Relational2Rdf.Converter.Conversion.Settings;
 using Relational2Rdf.Converter.Utils;
@@ -19,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Relational2Rdf.Converter
 {
-	public static class Converter
+    public static class Converter
 	{
 		private static List<Runner<(ISchema schema, ITable table), bool, ConversionEngine>> _runners = new List<Runner<(ISchema, ITable), bool, ConversionEngine>>();
 		private static List<ConversionEngine> _engines = new List<ConversionEngine>();
@@ -131,9 +132,10 @@ namespace Relational2Rdf.Converter
 			var top = Console.CursorTop;
 			var tableCount = archive.Schemas.Sum(x => x.Tables.Count());
 			var threadCount = Math.Min(settings.ThreadCount, tableCount);
-
-			var aiMagic = new AiMagic(settings.AiKey, settings.AiModel, settings.AiEndpoint);
-
+			var aiService = string.IsNullOrEmpty(settings.AiService) ? AiServiceType.OpenAI : Enum.Parse<AiServiceType>(settings.AiService);
+			var aiConfig = new AiConfig(settings.AiEndpoint, settings.AiKey, settings.AiModel, aiService);
+			var inference = InferenceFactory.GetService(aiConfig);
+			var aiMagic = new AiMagic(inference);
 
 			// check if foreign keys are present
 			var fkCount = archive.Schemas.SelectMany(x => x.Tables).SelectMany(x => x.ForeignKeys).Count();

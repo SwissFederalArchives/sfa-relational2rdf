@@ -33,6 +33,10 @@ namespace Relational2Rdf.Cli
 		public string AiModel { get; set; } = "gpt-3.5-turbo";
 
 		[HasDefaultValue]
+		[Option("ai-service", ['s'], Description = "The AI service to use for inference. Default is OpenAI.")]
+		public string AiService { get; set; } = "OpenAI";
+
+		[HasDefaultValue]
 		[Option("no-console", Description = "Flag to disable console output.")]
 		public bool NoConsoleOutput { get; set; } = false;
 
@@ -61,6 +65,7 @@ namespace Relational2Rdf.Cli
 				AiKey = AiKey,
 				AiEndpoint = AiEndpoint,
 				AiModel = AiModel,
+				AiService = AiService,
 				TableSettings = tableSettings,
 				ConsoleOutput = NoConsoleOutput == false,
 				FileName = OutputFileName

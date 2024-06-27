@@ -1,41 +1,25 @@
 ﻿using OpenAI_API;
 using OpenAI_API.Chat;
 using Relational2Rdf.Common.Abstractions;
+using Relational2Rdf.Converter.Utils;
 using System.Collections.Frozen;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Relational2Rdf.Converter.Utils
+namespace Relational2Rdf.Converter.Ai
 {
 	public class AiMagic
 	{
-		private readonly string _apiKey;
-		private readonly OpenAIAPI _api;
-		private readonly string _model;
+		private readonly IInferenceService _ai;
 
-		public AiMagic(string key, string model, string endpoint = null)
+		public AiMagic(IInferenceService ai)
 		{
-			_model = model ?? "gpt-3.5-turbo";
-			_apiKey = key;
-			_api = new OpenAIAPI(key);
-			if (string.IsNullOrEmpty(endpoint) == false)
-				_api.ApiUrlFormat = $"{endpoint}/{{0}}/{{1}}";
-		}
-
-		private string FindJsonContent(string @string)
-		{
-			var start = @string.IndexOf("```json");
-			if (start == -1)
-				return @string;
-
-			start += 7;
-			var end = @string.IndexOf("```", start);
-			return @string[start..end].Trim();
+			_ai = ai;
 		}
 
 		private string getRelationShipPrompt(string table, string columns) =>
-			 $$"""
+				 $$"""
 			Given the following column names of the table "{{table}}", generate clean rdf predicate names which describes the relationship between the table and the columns
 			columns: {{columns}}
 
@@ -55,6 +39,9 @@ namespace Relational2Rdf.Converter.Utils
 
 		public async Task<Dictionary<string, string>> GetRdfRelationshipNamesAsync(string table, IEnumerable<string> columns)
 		{
+			if (columns.Count() == 0)
+				return new();
+
 			int failCount = 0;
 			Dictionary<string, string> result = null;
 			var record = Profiler.CreateTrace(nameof(AiMagic), nameof(GetRdfFriendlyNamesAsync));
@@ -63,27 +50,25 @@ namespace Relational2Rdf.Converter.Utils
 			{
 				var colList = string.Join(", ", columns.Select(x => $"\"{x}\""));
 				var prompt = getRelationShipPrompt(table, colList);
-
-				var req = new ChatRequest { MaxTokens = 2048, Model = _model, Temperature = 0.15F, Messages = new[] { new ChatMessage(ChatMessageRole.User, prompt) } };
-				var completion = await _api.Chat.CreateChatCompletionAsync(req);
-				var content = completion.Choices.First().Message.TextContent;
-
-				var dict = JsonSerializer.Deserialize<Dictionary<string, string>>(FindJsonContent(content));
+				var dict = await _ai.RequestJsonModelAsync<Dictionary<string, string>>(prompt);
 				if (result == null)
 					result = dict;
 				else
-					result.Merge(dict);	
+					result.Merge(dict);
 			}
 
-			record.Stop($"Ended with {failCount-1} Retries");
+			record.Stop($"Ended with {failCount - 1} Retries");
 			if (failCount == 4)
-				throw new TimeoutException($"AI failed to generate rdf names 3 times in a row"); 
+				throw new TimeoutException($"AI failed to generate rdf names 3 times in a row");
 
 			return result;
 		}
 
 		public async Task<Dictionary<string, string>> GetRdfFriendlyNamesAsync(IEnumerable<string> names)
 		{
+			if (names.Count() == 0)
+				return new();
+
 			var nameList = string.Join(", ", names);
 			var prompt = $$"""
 			Given the following database table names, 
@@ -97,10 +82,7 @@ namespace Relational2Rdf.Converter.Utils
 			}
 			""";
 
-			var req = new ChatRequest { MaxTokens = 2048, Model = "gpt-3.5-turbo", Temperature = 0.15F, Messages = new[] { new ChatMessage(ChatMessageRole.User, prompt) } };
-			var completion = await _api.Chat.CreateChatCompletionAsync(req);
-			var content = completion.Choices.First().Message.TextContent;
-			return JsonSerializer.Deserialize<Dictionary<string, string>>(FindJsonContent(content));
+			return await _ai.RequestJsonModelAsync<Dictionary<string, string>>(prompt);
 		}
 
 		public class AiManyToManyMapping
@@ -119,7 +101,7 @@ namespace Relational2Rdf.Converter.Utils
 			public AiColumnReference[] References { get; set; }
 
 			[JsonIgnore]
-			IEnumerable<IColumnReference> IForeignKey.References => this.References;
+			IEnumerable<IColumnReference> IForeignKey.References => References;
 		}
 
 		public class AiColumnReference : IColumnReference
@@ -132,10 +114,10 @@ namespace Relational2Rdf.Converter.Utils
 		public async Task<IEnumerable<AiForeignKey>> GuessForeignKeysAsync(IRelationalDataSource source)
 		{
 			var builder = new StringBuilder();
-			foreach(var schema in source.Schemas)
+			foreach (var schema in source.Schemas)
 			{
 				builder.AppendLine($"{schema.Name}:");
-				foreach(var table in schema.Tables)
+				foreach (var table in schema.Tables)
 				{
 					var primary = table.KeyColumns.Select(x => x.Name).ToFrozenSet();
 					var columns = string.Join(", ", table.ColumnNames.Select(x => primary.Contains(x) ? $"*{x}" : x));
@@ -182,12 +164,7 @@ namespace Relational2Rdf.Converter.Utils
 			```
 			""";
 
-
-			var req = new ChatRequest { MaxTokens = 4096, Model = "gpt-4", Temperature = 0.15F, Messages = new[] { new ChatMessage(ChatMessageRole.User, prompt) } };
-			var completion = await _api.Chat.CreateChatCompletionAsync(req);
-			var content = completion.Choices.First().Message.TextContent;
-			var json = FindJsonContent(content);
-			return JsonSerializer.Deserialize<AiForeignKey[]>(json);
+			return await _ai.RequestJsonModelAsync<AiForeignKey[]>(prompt);
 		}
 
 		public async Task<AiManyToManyMapping> GetManyToManyNamesAsync(string table1Name, string table2Name, string middleTable, string fk1, string fk2)
@@ -210,10 +187,7 @@ namespace Relational2Rdf.Converter.Utils
 			}
 			""";
 
-			var req = new ChatRequest { MaxTokens = 2048, Model = _model, Temperature = 0.15F, Messages = new[] { new ChatMessage(ChatMessageRole.User, prompt) } };
-			var completion = await _api.Chat.CreateChatCompletionAsync(req);
-			var content = completion.Choices.First().Message.TextContent;
-			return JsonSerializer.Deserialize<AiManyToManyMapping>(FindJsonContent(content));
+			return await _ai.RequestJsonModelAsync<AiManyToManyMapping>(prompt);
 		}
 
 
@@ -226,6 +200,9 @@ namespace Relational2Rdf.Converter.Utils
 
 		public async Task<AiForeignKeyPredicateNaming> GetForeignKeyNamesAsync(string tableName, IEnumerable<(string name, string table)> foreignKeys)
 		{
+			if (foreignKeys.Count() == 0)
+				return new();
+
 			var prompt = $$"""
 			Given the following relation ships between two tables denoted as `Table1 --(Relation Name)--> Table2`
 			{{string.Join("\n", foreignKeys.Select(x => $"{tableName} --({x.name})--> {x.table}"))}}
@@ -251,10 +228,7 @@ namespace Relational2Rdf.Converter.Utils
 			}
 			""";
 
-			var req = new ChatRequest { MaxTokens = 2048, Model = _model, Temperature = 0.15F, Messages = new[] { new ChatMessage(ChatMessageRole.User, prompt) } };
-			var completion = await _api.Chat.CreateChatCompletionAsync(req);
-			var content = completion.Choices.First().Message.TextContent;
-			return JsonSerializer.Deserialize<AiForeignKeyPredicateNaming>(FindJsonContent(content));
+			return await _ai.RequestJsonModelAsync<AiForeignKeyPredicateNaming>(prompt);
 		}
 	}
 }
