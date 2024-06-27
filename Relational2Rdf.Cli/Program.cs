@@ -21,6 +21,8 @@ static async Task RunSiard([Argument(Name = "Siard File", Description = "Path to
 	{
 		var traceName = outputFile + ".trace.json";
 		Dictionary<string, IEnumerable<ProfilerRecord>> records = Profiler.GetCategories().ToDictionary(x => x, x => Profiler.GetRecords(x));
-		await JsonSerializer.SerializeAsync(File.Create(traceName), records);
+		using var trace = File.Create(traceName);
+		await JsonSerializer.SerializeAsync(trace, records);
+		await trace.FlushAsync();
 	}
 }
