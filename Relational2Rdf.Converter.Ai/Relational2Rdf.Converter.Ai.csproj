@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="OpenAI" Version="1.11.0" /> 
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="..\Relational2Rdf.Converter\Relational2Rdf.Converter.csproj" />
   </ItemGroup>
 

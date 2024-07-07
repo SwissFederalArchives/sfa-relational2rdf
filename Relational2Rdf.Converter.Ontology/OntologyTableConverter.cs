@@ -1,7 +1,6 @@
 ﻿using AwosFramework.Rdf.Lib.Core;
 using AwosFramework.Rdf.Lib.Writer;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using Relational2Rdf.Common.Abstractions;
 using Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta;
 using Relational2Rdf.Converter.Ontology.Conversion.ReferenceMeta;

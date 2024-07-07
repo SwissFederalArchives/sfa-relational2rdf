@@ -13,7 +13,6 @@ namespace Relational2Rdf.Converter.Ontology
 {
 	public class OntologyTableConverterFactory : IConverterFactory
 	{
-		private IRelationalDataSource _dataSource;
 		private ITripletWriter _writer;
 		private OntologyConversionContext _ctx;
 		private readonly ILoggerFactory _loggerFactory;
@@ -27,7 +26,7 @@ namespace Relational2Rdf.Converter.Ontology
 
 		public Task<ITableConverter> GetTableConverterAsync(ISchema schema, ITable table)
 		{
-			var reader = _dataSource.GetReader(schema, table);
+			var reader = _ctx.DataSource.GetReader(schema, table);
 			return Task.FromResult<ITableConverter>(new OntologyTableConverter(reader, _writer, _loggerFactory, _ctx, _settings.TableSettings));
 		}
 
@@ -102,8 +101,8 @@ namespace Relational2Rdf.Converter.Ontology
 
 		private void WriteForeignKey(ISchema schema, ITable table, IForeignKey key)
 		{
-			var refSchema = _dataSource.FindSchema(key.ReferencedSchema);
-			var refTable = _dataSource.FindTable(refSchema, key.ReferencedTable);
+			var refSchema = _ctx.DataSource.FindSchema(key.ReferencedSchema);
+			var refTable = _ctx.DataSource.FindTable(refSchema, key.ReferencedTable);
 			var keyIri = _ctx.GetForeignKeyIri(schema, table, key);
 			var sub = _writer.BeginSubject(keyIri);
 			sub.WriteSubjectType(_ctx.SiardIri, "ForeignKey");

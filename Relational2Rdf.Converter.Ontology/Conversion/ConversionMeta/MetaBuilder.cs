@@ -22,6 +22,8 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 			var attributeMap = attributes.ToFrozenDictionary(x => x.Name);
 			var udtAttributes = attributes.Where(x => x.AttributeType == AttributeType.Udt || x.AttributeType == AttributeType.UdtArray);
 			var nestedMetas = new Dictionary<IAttribute, IConversionMeta>();
+			int counter = 1;
+			var attrNames = type.Attributes.ToFrozenDictionary(x => x, x => $"c{counter++}");
 
 			foreach (var attr in udtAttributes)
 			{
@@ -37,7 +39,8 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 				NestedMetas = nestedMetas.ToFrozenDictionary(),
 				References = Array.Empty<IReferenceMeta>(),
 				TypeName = type.Name,
-				Attributes = valueAttributes.ToArray(),
+				AttributeCellNames = attrNames,
+				Attributes = type.Attributes.ToArray(),
 				Counter = ctx.GetCounter(type.Name),
 				RowBaseIri = iri.Extend("row")
 			};
@@ -147,7 +150,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 					TypeIri = iri,
 					KeyColumn = table.KeyColumns.First().Name,
 					References = references,
-					Attributes = valueColumns.Cast<IAttribute>().ToArray(),
+					Attributes = table.Columns.Cast<IAttribute>().ToArray(),
 					NeedsEscaping = table.KeyColumns.First().CommonType != CommonType.Integer,
 					NestedMetas = nestedMetas.ToFrozenDictionary(),
 					AttributeCellNames = attrNames,
@@ -164,6 +167,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 					References = references,
 					Attributes = valueColumns.Cast<IAttribute>().ToArray(),
 					NestedMetas = nestedMetas.ToFrozenDictionary(),
+					AttributeCellNames = attrNames,
 					RowBaseIri = iri.Extend("row")
 				};
 			}
@@ -176,6 +180,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 					Counter = ctx.GetCounter(table.Name),
 					References = references,
 					Attributes = valueColumns.Cast<IAttribute>().ToArray(),
+					AttributeCellNames = attrNames,
 					NestedMetas = nestedMetas.ToFrozenDictionary(),
 					RowBaseIri = iri.Extend("row")
 				};
