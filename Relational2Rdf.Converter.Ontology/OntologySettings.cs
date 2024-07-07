@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Relational2Rdf.Converter.Ontology.Conversion.Settings;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,18 +11,13 @@ namespace Relational2Rdf.Converter.Ontology
 	{
 		public static readonly OntologySettings Default = new OntologySettings
 		{
-			Indentation = "  ",
-			BaseUri = "https://ld.admin.ch/",
-			PredicatePrefix = "http://siard.link#",
-			TypePrefix = "http://siard.link#",
-			UsePrefixes = false
+			BaseIri = "https://ld.admin.ch/",
+			SiardIri = "http://siard.link#",
+			TableSettings = new TableConversionSettings()
 		};
 
-		public string BaseUri { get; init; }
-		public string PredicatePrefix { get; init; }
-		public string TypePrefix { get; init; }
-		public bool UsePrefixes { get; init; }
-		public string Indentation { get; init; } 
-		public string LineBreak { get; init; } = "\n";
+		public string BaseIri { get; init; }
+		public string SiardIri { get; init; }
+		public TableConversionSettings TableSettings { get; init; }
 	}
 }

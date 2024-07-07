@@ -3,6 +3,7 @@ using Relational2Rdf.Common.Abstractions;
 using Relational2Rdf.Converter.Ai.Conversion.ConversionMeta;
 using Relational2Rdf.Converter.Ai.Conversion.ReferenceMeta;
 using Relational2Rdf.Converter.Ai.Conversion.Settings;
+using Relational2Rdf.Converter.Ontology.Conversion.Settings;
 using Relational2Rdf.Converter.Utils;
 using System.Collections.Frozen;
 using System.Diagnostics;

@@ -94,5 +94,8 @@ namespace Relational2Rdf.DataSources.Siard
 
 		public string Name => Archive.Name;
 		public IEnumerable<ISchema> Schemas => Archive.Schemas;
+		public string ProducerApplication => Archive.ProducerApplication;
+		public string DataOwner => Archive.DataOwner;
+
 	}
 }

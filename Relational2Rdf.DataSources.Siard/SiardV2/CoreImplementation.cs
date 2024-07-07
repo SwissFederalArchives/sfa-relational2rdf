@@ -49,6 +49,7 @@ namespace Relational2Rdf.DataSources.Siard.SiardV2
 	public partial class AttributeTypeV2 : IAttribute
 	{
 		public string SourceType => getChoiceValue(ItemsChoiceTypeV2.type);
+		public string OriginalSourceType => TypeOriginal;	
 		public string UdtType => getChoiceValue(ItemsChoiceTypeV2.typeName);
 		public string UdtSchema => getChoiceValue(ItemsChoiceTypeV2.typeSchema);
 
@@ -97,7 +98,7 @@ namespace Relational2Rdf.DataSources.Siard.SiardV2
 		public string SourceType => getChoiceValue(ItemsChoiceType1V2.type);
 		public string UdtType => getChoiceValue(ItemsChoiceType1V2.typeName);
 		public string UdtSchema => getChoiceValue(ItemsChoiceType1V2.typeSchema);
-
+		public string OriginalSourceType => TypeOriginal;
 
 		[XmlIgnore]
 		private AttributeType? _attr;

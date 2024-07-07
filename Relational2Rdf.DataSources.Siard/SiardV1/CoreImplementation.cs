@@ -37,6 +37,7 @@ namespace Relational2Rdf.DataSources.Siard.SiardV1
 	public partial class ColumnTypeV1 : IColumn
 	{
 		public string SourceType => Type;
+		public string OriginalSourceType => TypeOriginal;
 		public string UdtType => null;
 		public string UdtSchema => null;
 

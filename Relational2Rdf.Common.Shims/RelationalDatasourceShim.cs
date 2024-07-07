@@ -19,8 +19,9 @@ namespace Relation2Rdf.Common.Shims
 		}
 
 		public string Name => _base.Name;
-
 		public IEnumerable<ISchema> Schemas => _schemas;
+		public string ProducerApplication => _base.ProducerApplication;
+		public string DataOwner => _base.DataOwner;
 
 		public void Dispose()
 		{

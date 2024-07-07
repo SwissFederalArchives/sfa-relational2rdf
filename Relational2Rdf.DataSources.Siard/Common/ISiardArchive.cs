@@ -9,6 +9,8 @@ namespace Relational2Rdf.DataSources.Siard.Common
 {
 	internal interface ISiardArchive
 	{
+		public string ProducerApplication { get; }
+		public string DataOwner { get; }
 		public IEnumerable<ISchema> Schemas { get; }
 		public SiardVersion Version { get; }
 		public string Name { get; }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Relational2Rdf.Converter.Ontology.Conversion.Settings;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

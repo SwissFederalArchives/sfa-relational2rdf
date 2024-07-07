@@ -1,6 +1,8 @@
 ﻿using Cocona;
 using Relational2Rdf.Converter;
 using Relational2Rdf.Converter.Ai.Conversion.Settings;
+using Relational2Rdf.Converter.Ontology;
+using Relational2Rdf.Converter.Ontology.Conversion.Settings;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,6 +16,10 @@ namespace Relational2Rdf.Cli
 
 	public class ConversionParameters : ICommandParameterSet
 	{
+		[HasDefaultValue]
+		[Option("converter", ['v'], Description = "The type of converter to use. Default is Ontology.")]
+		public ConverterType ConverterType { get; set; } = ConverterType.Ontology;
+
 		[HasDefaultValue]
 		[Option("threads", ['t'], Description = "The number of threads to use for processing.")]
 		public int ThreadCount { get; set; } = Environment.ProcessorCount;
@@ -65,6 +71,12 @@ namespace Relational2Rdf.Cli
 				FileName = OutputFileName,
 				OutputDir = OutputDirectory,
 			};
+		}
+
+		public OntologySettings BuildOntologyConfig()
+		{
+			var tableSettings = JsonSerializer.Deserialize<TableConversionSettings>(File.OpenRead(TableConfigPath));
+			return new OntologySettings { BaseIri = BaseIri, TableSettings = tableSettings, SiardIri = "http://siard.link#" };
 		}
 
 		public AiConversionSettings BuildAiConfig()

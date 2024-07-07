@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Relational2Rdf.Converter.Ai\Relational2Rdf.Converter.Ai.csproj" />
+    <ProjectReference Include="..\Relational2Rdf.Converter.Ontology\Relational2Rdf.Converter.Ontology.csproj" />
     <ProjectReference Include="..\Relational2Rdf.Converter\Relational2Rdf.Converter.csproj" />
     <ProjectReference Include="..\Relational2Rdf.DataSources.Siard\Relational2Rdf.DataSources.Siard.csproj" />
   </ItemGroup>

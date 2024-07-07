@@ -6,6 +6,7 @@ using Relational2Rdf.Cli;
 using Relational2Rdf.Common.Abstractions;
 using Relational2Rdf.Converter;
 using Relational2Rdf.Converter.Ai;
+using Relational2Rdf.Converter.Ontology;
 using Relational2Rdf.Converter.Utils;
 using Relational2Rdf.DataSources.Siard;
 using System.Diagnostics.Eventing.Reader;
@@ -17,11 +18,7 @@ builder.Logging.AddDebug();
 var app = builder.Build();
 
 
-app.AddCommand("siard", () => Console.WriteLine("specify one output provider")).OptionLikeCommand(x =>
-{
-	x.Add("ai", RunSiardAi);
-});
-
+app.AddCommand("siard", RunSiard);
 await app.RunAsync();
 
 
@@ -39,11 +36,27 @@ async Task HandleTraceAsync(ConversionParameters settings, string outputFile)
 	Profiler.Clear();
 }
 
-async Task RunSiardAi([Argument(Name = "Siard File", Description = "Path to the archive file to convert")] string siardFile, ConversionParameters parameters)
+IConverterFactory GetConversionFactory(ConversionParameters parameters, ILoggerFactory factory)
+{
+	switch (parameters.ConverterType)
+	{
+		case ConverterType.Ai:
+			return new AiConveterFactory(parameters.BuildAiConfig());
+
+		case ConverterType.Ontology:
+			return new OntologyTableConverterFactory(parameters.BuildOntologyConfig(), factory);
+
+		default:
+			throw new InvalidOperationException("Invalid converter type");
+	}
+}
+
+
+async Task RunSiard([Argument(Name = "Siard File", Description = "Path to the archive file to convert")] string siardFile, ConversionParameters parameters)
 {
 	var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 	var reader = new SiardFileReader();
-	var factory = new AiConveterFactory(parameters.BuildAiConfig());
+	var factory = GetConversionFactory(parameters, loggerFactory);
 	var converter = new ConversionsManager(parameters.BuildConverterConfig(), factory, loggerFactory);
 	var attr = File.GetAttributes(siardFile);
 	var files = attr.HasFlag(FileAttributes.Directory) ? Directory.GetFiles(siardFile, "*.siard") : new string[] { siardFile };

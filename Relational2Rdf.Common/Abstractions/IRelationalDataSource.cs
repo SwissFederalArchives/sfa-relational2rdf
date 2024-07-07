@@ -10,7 +10,10 @@ namespace Relational2Rdf.Common.Abstractions
 	public interface IRelationalDataSource : IDisposable
 	{
 		public string Name { get; }
+		public string ProducerApplication { get; }
+		public string DataOwner { get; }
 		public IEnumerable<ISchema> Schemas { get; }
+
 		public ISchema FindSchema(string name);
 
 		public ITable FindTable(ISchema schema, string table);

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Relational2Rdf.Converter.Ai.Conversion.Settings
+namespace Relational2Rdf.Converter.Ontology.Conversion.Settings
 {
 	public class TableConversionSettings
 	{
