@@ -2,7 +2,7 @@
   "profiles": {
     "Relational2Rdf.Cli": {
       "commandName": "Project",
-      "commandLineArgs": "siard C:\\Users\\flori\\Desktop\\SIARD_2d2.siard -e https://ollama.devprxy.com -k zCYxrXE5D4ZfD5fqGJ5nirBSVKVP7pxV -m llama3:70b --trace --table-config ./table-config.json --ai-service Ollama --trace"
+      "commandLineArgs": "siard --ai C:\\Users\\flori\\Desktop\\SIARD_2d2.siard -e https://ollama.devprxy.com -k zCYxrXE5D4ZfD5fqGJ5nirBSVKVP7pxV -m llama3:70b --trace --table-config ./table-config.json --ai-service Ollama --trace"
     }
   }
 }

@@ -12,6 +12,13 @@ namespace Relational2Rdf.Converter.Utils
 		private static ConcurrentDictionary<string, List<ProfilerRecord>> _records = new ConcurrentDictionary<string, List<ProfilerRecord>>();
 		private static SemaphoreSlim _dictLock = new SemaphoreSlim(1, 1);
 
+		public static void Clear()
+		{
+			_dictLock.Wait();
+			_records.Clear();
+			_dictLock.Release();
+		}
+
 		public static ProfilerRecord Trace(string category, string unit, string message = null)
 		{
 			var record = ProfilerRecord.CreatePreset(category, unit, message);

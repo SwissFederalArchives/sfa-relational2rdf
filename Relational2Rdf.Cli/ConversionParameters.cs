@@ -1,5 +1,6 @@
 ﻿using Cocona;
-using Relational2Rdf.Converter.Conversion.Settings;
+using Relational2Rdf.Converter;
+using Relational2Rdf.Converter.Ai.Conversion.Settings;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -55,20 +56,28 @@ namespace Relational2Rdf.Cli
 		[Option("trace", Description = "Output json file containing time measurements for debugging")]
 		public bool Trace { get; set; } = false;
 
-		public ConversionSettings BuildConfig()
+		public ConverterSettings BuildConverterConfig() 	
 		{
-			var tableSettings = JsonSerializer.Deserialize<TableConversionSettings>(File.OpenRead(TableConfigPath));
-			return new ConversionSettings
+			return new ConverterSettings
 			{
 				ThreadCount = ThreadCount,
+				ConsoleOutput = NoConsoleOutput == false,
+				FileName = OutputFileName,
+				OutputDir = OutputDirectory,
+			};
+		}
+
+		public AiConversionSettings BuildAiConfig()
+		{
+			var tableSettings = JsonSerializer.Deserialize<TableConversionSettings>(File.OpenRead(TableConfigPath));
+			return new AiConversionSettings
+			{
 				BaseIri = BaseIri,
 				AiKey = AiKey,
 				AiEndpoint = AiEndpoint,
 				AiModel = AiModel,
 				AiService = AiService,
 				TableSettings = tableSettings,
-				ConsoleOutput = NoConsoleOutput == false,
-				FileName = OutputFileName
 			};
 		}
 	}

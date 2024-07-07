@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aeolin.AwosFramework" Version="1.2.1" />
+    <PackageReference Include="Aeolin.AwosFramework" Version="1.3.3" />
     <PackageReference Include="Aeolin.AwosFramework.Rdf.Lib" Version="0.2.2" />
-    <PackageReference Include="OpenAI" Version="1.10.0" />
+    <PackageReference Include="OpenAI" Version="1.11.0" />
   </ItemGroup>
 
   <ItemGroup>

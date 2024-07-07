@@ -25,6 +25,8 @@ namespace Relational2Rdf.Converter.Utils
 			return Convert.ToBase64String(bytes);
 		}
 
+		public static string Replace(this string @string, char[] chars, string replace = "") => string.Join(replace, @string.Split(chars));
+
 		public static string Pad(this string @string, int size, char fillChar = ' ')
 		{
 			if (@string == null)

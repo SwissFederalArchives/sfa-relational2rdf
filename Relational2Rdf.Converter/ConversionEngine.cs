@@ -1,7 +1,6 @@
 ﻿using AwosFramework.Rdf.Lib.Writer;
 using Relational2Rdf.Common.Abstractions;
-using Relational2Rdf.Converter.Conversion;
-using Relational2Rdf.Converter.Conversion.Settings;
+using Relational2Rdf.Converter.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,43 +9,28 @@ using System.Threading.Tasks;
 
 namespace Relational2Rdf.Converter
 {
-	internal class ConversionEngine
+	public class ConversionEngine
 	{
-		private ConversionContext _context;
-		private ITripletWriter _writer;
-		private ConversionSettings _settings;
+		private readonly IConverterFactory _factory;
+		public Progress Progress { get; init; }
+		public ITable CurrentTable { get; private set; }	
 
-		public ITable CurrentTable { get; private set; }
-		public int Rows { get; private set; }
-		public int Current { get; private set; }
-		public double Progress => (double)Current / Rows;
-
-		public event Action<ConversionEngine> OnProgress;
-
-		public ConversionEngine(ConversionContext context, ITripletWriter writer, ConversionSettings setting)
+		public ConversionEngine(IConverterFactory factory)
 		{
-			_context=context;
-			_writer=writer;
-			_settings=setting;
+			_factory = factory;
+			Progress = new Progress();
 		}
 
-		public async Task<bool> ConvertAsync(ISchema schema, ITable table)
+		public async Task ConvertAsync(ISchema schema, ITable table)
 		{
-			Rows = table.RowCount;
-			Current = 0;
 			CurrentTable = table;
-			using var reader = _context.DataSource.GetReader(schema, table);
-			var tableConverter = new TableConverter(_context, _writer, reader, _settings.TableSettings);
-			await tableConverter.ConvertAsync(Math.Min(1000, Math.Max(1, table.RowCount / 10)), (prog) =>
-			{
-				Current = prog;
-				OnProgress?.Invoke(this);
-			});
+			Progress.Setup(table.RowCount, table.Name);
 
-			Current = table.RowCount;
-			OnProgress?.Invoke(this);
+			var converter = await _factory.GetTableConverterAsync(schema, table);
+			await converter.ConvertAsync(Progress);
+
+			Progress.Clear();
 			CurrentTable = null;
-			return true;
 		}
 	}
 }
