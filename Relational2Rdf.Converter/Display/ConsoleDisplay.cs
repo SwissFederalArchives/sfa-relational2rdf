@@ -154,7 +154,9 @@ namespace Relational2Rdf.Converter.Display
 			if (index < 0)
 				return;
 
-			_consoleLock.Wait();
+			if (_consoleLock.Wait(1000) == false)
+				return;
+
 			if (CheckResize())
 				RenderProgress(index);
 
