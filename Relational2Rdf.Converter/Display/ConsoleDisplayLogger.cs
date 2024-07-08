@@ -28,6 +28,7 @@ namespace Relational2Rdf.Converter.Display
 		public string Name { get; init; }
 		public ConsoleDisplay Display { get; init; }
 		private readonly ColorConsoleLoggerConfiguration _config;
+		public LogLevel MinLogLevel { get; set; } = LogLevel.Information;
 
 		public ColorConsoleDisplayLogger(string name, ConsoleDisplay display, ColorConsoleLoggerConfiguration config) : this()
 		{
@@ -38,7 +39,7 @@ namespace Relational2Rdf.Converter.Display
 
 		public IDisposable BeginScope<TState>(TState state) where TState : notnull => default!;
 
-		public bool IsEnabled(LogLevel logLevel) => _config.LogLevelToColorMap.ContainsKey(logLevel);
+		public bool IsEnabled(LogLevel logLevel) => logLevel >= MinLogLevel && _config.LogLevelToColorMap.ContainsKey(logLevel);
 
 		public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
 		{

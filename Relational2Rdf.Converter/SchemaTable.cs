@@ -9,5 +9,9 @@ namespace Relational2Rdf.Converter
 {
 	public record SchemaTable(ISchema Schema, ITable Table)
 	{
+		public override string ToString()
+		{
+			return $"{nameof(SchemaTable)} {{ Schema = {Schema.Name}, Table = {Table.Name} }}";
+		}
 	}
 }

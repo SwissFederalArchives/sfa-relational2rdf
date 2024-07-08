@@ -1,10 +1,12 @@
-﻿using Newtonsoft.Json.Schema;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Schema;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -18,9 +20,11 @@ namespace Relational2Rdf.Converter.Ai.Inference
 		private readonly AiConfig _config;
 		private readonly HttpClient _client;
 		private readonly JsonSerializerOptions _jsonOptions;
+		private readonly ILogger _logger;
 
-		public OllamaInference(AiConfig config)
+		public OllamaInference(AiConfig config, ILoggerFactory factory)
 		{
+			_logger = factory.CreateLogger<OllamaInference>();
 			_config=config;
 			_client = new HttpClient();
 			var endPoint = config.Endpoint;
@@ -31,6 +35,8 @@ namespace Relational2Rdf.Converter.Ai.Inference
 			{
 				PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower
 			};
+
+			_logger.LogInformation("Created Inference for endpoint {endpoint}, model {model}", config.Endpoint, config.Model);
 		}
 
 		public record OllamaRequest(string Model, string Prompt, string System = SystemPrompt, bool Stream = false, float Temperature = 0.15F);
@@ -41,9 +47,20 @@ namespace Relational2Rdf.Converter.Ai.Inference
 			var req = new OllamaRequest(_config.Model, prompt);
 			var result = await _client.PostAsJsonAsync("generate", req, _jsonOptions);
 			result.EnsureSuccessStatusCode();
-			var response = await result.Content.ReadFromJsonAsync<OllamaResponse>();
-			var jsonContent = AiUtils.FindJsonContent(response.Response);
-			return JsonSerializer.Deserialize<T>(jsonContent);
+			var responseData = await result.Content.ReadFromJsonAsync<OllamaResponse>();
+
+			try
+			{
+				var jsonContent = AiUtils.FindJsonContent(responseData.Response);
+				var response = JsonSerializer.Deserialize<T>(jsonContent);
+				_logger.LogDebug("Received response from ai \n<PROMPT>\n{prompt}\n</PROMPT>\n<RESPONSE>\n{response}\n</RESPONSE>", prompt, jsonContent);
+				return response;
+			}
+			catch (JsonException ex)
+			{
+				_logger.LogError(ex, "Error deserializing json content from ai \n<PROMPT>\n{prompt}\n</PROMPT>\n<RESPONSE>\n{response}\n</RESPONSE>", prompt, responseData.Response);
+				throw;
+			}
 		}
 	}
 }

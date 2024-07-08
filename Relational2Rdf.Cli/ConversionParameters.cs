@@ -1,4 +1,5 @@
 ﻿using Cocona;
+using Microsoft.Extensions.Logging;
 using Relational2Rdf.Converter;
 using Relational2Rdf.Converter.Ai.Conversion.Settings;
 using Relational2Rdf.Converter.Ontology;
@@ -57,6 +58,14 @@ namespace Relational2Rdf.Cli
 		[HasDefaultValue]
 		[Option("output-file", ['f'], Description = "Output file name for converted archive")]
 		public string OutputFileName { get; set; } = null;
+
+		[HasDefaultValue]
+		[Option("log-file", ['l'], Description = "Where the log file should be save")]
+		public string LogFile { get; set; } = null;
+
+		[HasDefaultValue]
+		[Option("log-level", Description = "Log level for log file")]
+		public LogLevel LogLevel { get; set; } = LogLevel.Information;
 
 		[HasDefaultValue]
 		[Option("trace", Description = "Output json file containing time measurements for debugging")]

@@ -2,7 +2,7 @@
   "profiles": {
     "Relational2Rdf.Cli": {
       "commandName": "Project",
-      "commandLineArgs": "siard C:\\Users\\flori\\Desktop\\Resources\\stapfer.siard -v Ontology -k sk-proj-nPb7ruEn30NWF3xzkHhST3BlbkFJIorLcWVGduaKNt1eEI9O -m gpt-4o --trace --table-config ./table-config.json --ai-service OpenAi --trace -f stapfer-ontology.ttl"
+      "commandLineArgs": "siard C:\\Users\\flori\\Desktop\\Resources\\stapfer.siard -v Ai -k sk-proj-nPb7ruEn30NWF3xzkHhST3BlbkFJIorLcWVGduaKNt1eEI9O -m gpt-3.5-turbo --trace --table-config ./table-config.json --ai-service OpenAi --trace -f stapfer-ai.ttl -l ./stapfer.log --log-level Trace"
     }
   }
 }

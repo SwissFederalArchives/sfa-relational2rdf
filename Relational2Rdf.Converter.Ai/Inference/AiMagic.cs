@@ -1,4 +1,5 @@
-﻿using OpenAI_API;
+﻿using Microsoft.Extensions.Logging;
+using OpenAI_API;
 using OpenAI_API.Chat;
 using Relational2Rdf.Common.Abstractions;
 using Relational2Rdf.Converter.Utils;
@@ -13,10 +14,12 @@ namespace Relational2Rdf.Converter.Ai.Inference
 	public class AiMagic 
 	{
 		private readonly IInferenceService _ai;
+		private readonly ILogger _logger;
 
-		public AiMagic(IInferenceService ai)
+		public AiMagic(IInferenceService ai, ILoggerFactory factory)
 		{
 			_ai = ai;
+			_logger = factory.CreateLogger<AiMagic>();
 		}
 
 		private string getRelationShipPrompt(string table, string columns) =>

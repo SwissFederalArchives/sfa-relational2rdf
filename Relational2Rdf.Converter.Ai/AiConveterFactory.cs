@@ -9,6 +9,7 @@ using Relational2Rdf.Converter.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ namespace Relational2Rdf.Converter.Ai
 		private readonly AiConversionSettings _settings;
 
 		private ILoggerFactory _factory;
+		private ILogger _logger;
 		private ConversionContext? _context;
 		private AiMagic? _aiMagic;
 		private ITripletWriter? _writer;
@@ -30,6 +32,7 @@ namespace Relational2Rdf.Converter.Ai
 		{
 			_settings = settings;
 			_factory=factory;
+			_logger = factory.CreateLogger<AiConveterFactory>();
 		}
 
 		public Task<ITableConverter> GetTableConverterAsync(ISchema schema, ITable table)
@@ -50,9 +53,10 @@ namespace Relational2Rdf.Converter.Ai
 				throw new ArgumentException($"Invalid AI service type: {_settings.AiService}, expected one of the following: {string.Join(", ", Enum.GetNames<AiServiceType>())}");
 
 			var aiConfig = new AiConfig(_settings.AiEndpoint, _settings.AiKey, _settings.AiModel, serviceType);
-			var inference = InferenceFactory.GetService(aiConfig);
-			_aiMagic = new AiMagic(inference);
+			var inference = InferenceFactory.GetService(aiConfig, _factory);
+			_aiMagic = new AiMagic(inference, _factory);
 			_context = new ConversionContext(_settings, _aiMagic, dataSource, writer);
+			_logger.LogInformation("Initializing AI conversion context");
 			await _context.InitAsync();
 
 
@@ -61,6 +65,7 @@ namespace Relational2Rdf.Converter.Ai
 			var fkCount = dataSource.Schemas.SelectMany(x => x.Tables).SelectMany(x => x.ForeignKeys).Count();
 			if (_settings.ReconstructMissingRelationships && fkCount == 0 && tableCount > 1)
 			{
+				_logger.LogInformation("Restoring missing foreign keys");
 				using (Profiler.Trace(nameof(AiConveterFactory), "RestoreForeignKeys"))
 				{
 					dataSource = await ReconstructForeignKeysAsync(dataSource, _aiMagic);

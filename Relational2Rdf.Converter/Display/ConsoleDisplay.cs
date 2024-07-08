@@ -106,6 +106,10 @@ namespace Relational2Rdf.Converter.Display
 				Console.Write(log.Current.Level);
 				Console.ForegroundColor = foreground;
 				Console.Write($"] [{log.Current.Name}]: ");
+				var left = _lastWidth - Console.CursorLeft;
+				if (left > 0)
+					Console.Write(new string(' ', left));
+
 				if (log.Current.Message.Contains("\n"))
 				{
 					var lines = log.Current.Message.Split("\n");

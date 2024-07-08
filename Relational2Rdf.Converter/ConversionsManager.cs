@@ -68,6 +68,7 @@ namespace Relational2Rdf.Converter
 		{
 			string outputFile = Path.Join(_settings.OutputDir.FullName, _settings.FileName ?? $"{source.Name.Replace(Path.GetInvalidFileNameChars())}.ttl");
 			var writer = WriterFactory.TurtleWriter(outputFile);
+			_logger.LogDebug("Created output turtle output file {path} for source {source}", outputFile, source.Name);
 			using (Profiler.Trace("InitializeConversionFactory", source.Name))
 				await _factory.InitAsync(writer, source);
 
