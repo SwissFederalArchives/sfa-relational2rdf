@@ -12,7 +12,7 @@ namespace Relational2Rdf.Converter.Utils
 	public static class Extensions
 	{
 		public static string IriFriendly(this string @string) => @string.ToLower().Replace(" ", "-");
-		public static string PrefixEscape(this string @string) => Uri.EscapeDataString(@string);
+		public static string IriEscape(this string @string) => Uri.EscapeDataString(@string ?? "\0");
 		public static string ConvertToBase64(this Stream stream)
 		{
 			byte[] bytes;

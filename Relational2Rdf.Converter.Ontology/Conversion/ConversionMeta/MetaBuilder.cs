@@ -23,7 +23,8 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 			var udtAttributes = attributes.Where(x => x.AttributeType == AttributeType.Udt || x.AttributeType == AttributeType.UdtArray);
 			var nestedMetas = new Dictionary<IAttribute, IConversionMeta>();
 			int counter = 1;
-			var attrNames = type.Attributes.ToFrozenDictionary(x => x, x => $"c{counter++}");
+			var attrItemInfos = type.Attributes.Select(x => new AttributeItemInfo(x, ctx.GetAttributeIri(schema, type, x), $"c{counter++}")).ToFrozenDictionary(x => x.Attribute);
+
 
 			foreach (var attr in udtAttributes)
 			{
@@ -39,45 +40,12 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 				NestedMetas = nestedMetas.ToFrozenDictionary(),
 				References = Array.Empty<IReferenceMeta>(),
 				TypeName = type.Name,
-				AttributeCellNames = attrNames,
+				AttributeItemInfos = attrItemInfos,
 				Attributes = type.Attributes.ToArray(),
 				Counter = ctx.GetCounter(type.Name),
 				RowBaseIri = iri.Extend("row")
 			};
 		}
-
-		//public static async Task<IManyToManyReferenceMeta> BuildManyToManyReferencesAsync(ConversionContext rctx, SchemaContext ctx, ITable table)
-		//{
-		//	var fkeys = table.ForeignKeys.ToArray();
-		//	var fkSource = fkeys[0];
-		//	var fkTarget = fkeys[1];
-
-		//	var sourceSchema = rctx.GetSchemaContext(fkSource.ReferencedSchema);
-		//	var sourceTable = rctx.DataSource.FindTable(fkSource.ReferencedSchema, fkSource.ReferencedTable);
-		//	var sourceColNames = sourceTable.Columns.ToArray();
-		//	var sourceCols = fkTarget.References.OrderBy(x => Array.IndexOf(sourceColNames, x.TargetColumn)).Select(x => x.SourceColumn).ToArray();
-		//	var sourceTableName = sourceSchema.GetTableName(sourceTable);
-		//	var sourcePredIri = rctx.GetTablePredicateIri(sourceSchema.Schema, sourceTable);
-
-		//	var targetSchema = rctx.GetSchemaContext(fkTarget.ReferencedSchema);
-		//	var targetTable = rctx.DataSource.FindTable(fkSource.ReferencedSchema, fkSource.ReferencedTable);
-		//	var targetColNames = targetTable.ColumnNames.ToArray();
-		//	var targetCols = fkTarget.References.OrderBy(x => Array.IndexOf(targetColNames, x.TargetColumn)).Select(x => x.SourceColumn).ToArray();
-		//	var targetTableName = targetSchema.GetTableName(targetTable);
-		//	var targetPredIri = rctx.GetTablePredicateIri(targetSchema.Schema, targetTable);
-
-
-		//	var predicates = await rctx.AiMagic.GetManyToManyNamesAsync(sourceTableName, targetTableName, ctx.GetTableName(table), fkSource.Name, fkTarget.Name);
-		//	return new ManyToManyReferenceMeta
-		//	{
-		//		SourceTypeIri = rctx.GetTableIri(sourceSchema.Schema, sourceTable),
-		//		TargetTypeIri = rctx.GetTableIri(targetSchema.Schema, targetTable),
-		//		SourceToTargetPredicate = sourcePredIri.Extend(predicates.Forward),
-		//		TargetToSourcePredicate = targetPredIri.Extend(predicates.Backward),
-		//		SourceColumns = sourceCols.ToArray(),
-		//		TargetColumns = targetCols.ToArray(),
-		//	};
-		//}
 
 		public static IReferenceMeta[] BuildReferenceMetas(OntologyConversionContext ctx, ISchema schema, ITable table)
 		{
@@ -87,7 +55,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 			for (int i = 0; i < fKeys.Length; i++)
 			{
 				var key = fKeys[i];
-				var targetTableIri = ctx.GetTypeIri(key.ReferencedSchema, key.ReferencedTable);
+				var targetRowIri = ctx.GetTypeIri(key.ReferencedSchema, key.ReferencedTable).Extend("row");
 				var attrs = key.References.Select(x => table.Columns.First(y => y.Name == x.SourceColumn)).ToArray();
 				var fkIri = ctx.GetForeignKeyIri(schema, table, key);
 
@@ -97,7 +65,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 					{
 						ForeignKey = key,
 						ForeignKeyColumn = key.References.First().SourceColumn,
-						TargeTypeIri = targetTableIri,
+						TargetRowIri = targetRowIri,
 						SourceAttributes = attrs,
 						ForeignKeyIri = fkIri
 					};
@@ -107,7 +75,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 					metas[i] = new MultiKeyReferenceMeta
 					{
 						ForeignKey = key,
-						TargeTypeIri = targetTableIri,
+						TargetRowIri = targetRowIri,
 						ForeignKeyColumns = key.References.Select(x => x.SourceColumn).ToArray(),
 						SourceAttributes = attrs,
 						ForeignKeyIri = fkIri
@@ -120,16 +88,18 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 
 		public static IConversionMeta BuildConversionMeta(OntologyConversionContext ctx, ISchema schema, ITable table)
 		{
-			var iri = ctx.GetTypeIri(schema, table);
+			var iri = ctx.GetTableIri(schema, table);
 
 			var refColumnNames = table.ForeignKeys.SelectMany(x => x.References).Select(x => x.SourceColumn).Distinct().ToArray();
 			var valueColumns = table.Columns.Where(x => refColumnNames.Contains(x.Name) == false);
+			
 			int counter = 1;
-			var attrNames = table.Columns.ToFrozenDictionary(x => (IAttribute)x, x => $"c{counter++}");
+			var attrItemInfos = table.Columns
+				.Select(x => new AttributeItemInfo(x, ctx.GetColumnIri(schema, table, x), $"c{counter++}"))
+				.ToFrozenDictionary(x => x.Attribute);
+			
 			var udtColumns = table.Columns.Where(x => x.AttributeType == AttributeType.Udt || x.AttributeType == AttributeType.UdtArray);
-			var refColumns = table.Columns.Where(x => refColumnNames.Contains(x.Name));
-			var attributeMap = table.Columns.ToFrozenDictionary(x => x.Name);
-
+			var refColumns = table.Columns.Where(x => refColumnNames.Contains(x.Name));	
 			var udtMetas = new Dictionary<IAttribute, IConversionMeta>();
 			var nestedMetas = new Dictionary<IAttribute, IConversionMeta>();
 			foreach (var attr in udtColumns)
@@ -153,7 +123,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 					Attributes = table.Columns.Cast<IAttribute>().ToArray(),
 					NeedsEscaping = table.KeyColumns.First().CommonType != CommonType.Integer,
 					NestedMetas = nestedMetas.ToFrozenDictionary(),
-					AttributeCellNames = attrNames,
+					AttributeItemInfos = attrItemInfos,
 					RowBaseIri = iri.Extend("row")
 				};
 			}
@@ -167,7 +137,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 					References = references,
 					Attributes = valueColumns.Cast<IAttribute>().ToArray(),
 					NestedMetas = nestedMetas.ToFrozenDictionary(),
-					AttributeCellNames = attrNames,
+					AttributeItemInfos = attrItemInfos,
 					RowBaseIri = iri.Extend("row")
 				};
 			}
@@ -180,7 +150,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 					Counter = ctx.GetCounter(table.Name),
 					References = references,
 					Attributes = valueColumns.Cast<IAttribute>().ToArray(),
-					AttributeCellNames = attrNames,
+					AttributeItemInfos = attrItemInfos,
 					NestedMetas = nestedMetas.ToFrozenDictionary(),
 					RowBaseIri = iri.Extend("row")
 				};

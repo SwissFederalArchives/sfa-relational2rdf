@@ -1,4 +1,5 @@
 ﻿using AwosFramework.Rdf.Lib.Writer;
+using Microsoft.Extensions.Logging;
 using Relation2Rdf.Common.Shims;
 using Relational2Rdf.Common.Abstractions;
 using Relational2Rdf.Converter.Ai.Conversion;
@@ -18,15 +19,17 @@ namespace Relational2Rdf.Converter.Ai
 	{
 		private readonly AiConversionSettings _settings;
 
+		private ILoggerFactory _factory;
 		private ConversionContext? _context;
 		private AiMagic? _aiMagic;
 		private ITripletWriter? _writer;
 		private IRelationalDataSource? _dataSource;
 		private bool _initialized = false;
 
-		public AiConveterFactory(AiConversionSettings settings)
+		public AiConveterFactory(AiConversionSettings settings, ILoggerFactory factory)
 		{
 			_settings = settings;
+			_factory=factory;
 		}
 
 		public Task<ITableConverter> GetTableConverterAsync(ISchema schema, ITable table)
@@ -35,7 +38,7 @@ namespace Relational2Rdf.Converter.Ai
 				throw new InvalidOperationException($"Factory not initialized, call {nameof(InitAsync)} first");
 
 			var reader = _dataSource!.GetReader(schema, table);
-			var res = new TableConverter(_context!, _writer!, reader, _settings.TableSettings);
+			var res = new TableConverter(_context, _factory, _writer, reader, _settings.TableSettings);
 			return Task.FromResult<ITableConverter>(res);
 		}
 

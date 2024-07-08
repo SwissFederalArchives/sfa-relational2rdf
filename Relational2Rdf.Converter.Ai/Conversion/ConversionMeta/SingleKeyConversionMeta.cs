@@ -22,7 +22,7 @@ namespace Relational2Rdf.Converter.Ai.Conversion.ConversionMeta
 		public string KeyColumn { get; init; }
 		public bool NeedsEscaping { get; init; }
 
-		public string GetKey(IRow row) => NeedsEscaping ? ((string)row[KeyColumn]).PrefixEscape() : (string)row[KeyColumn];
+		public string GetKey(IRow row) => NeedsEscaping ? ((string)row[KeyColumn]).IriEscape() : (string)row[KeyColumn];
 		public IConversionMeta GetNestedMeta(IAttribute attr) => NestedMetas[attr];
 		public IRI GetPredicate(IAttribute attr) => PredicateNames[attr];
 	}

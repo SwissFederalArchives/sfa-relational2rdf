@@ -10,7 +10,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ReferenceMeta
 {
 	public interface IReferenceMeta
 	{
-		public IRI TargeTypeIri { get; }
+		public IRI TargetRowIri { get; }
 		public IRI ForeignKeyIri { get; }
 		public string GetTargetKey(IRow row);
 		public IForeignKey ForeignKey { get; }

@@ -66,16 +66,20 @@ namespace Relational2Rdf.DataSources.Siard
 			return schema.Types.FirstOrDefault(x => x.Name == type);
 		}
 
-		public IType GetSuperType(IType type)
+		public IType GetSuperType(IType type, out ISchema superSchema)
 		{
 			// check if implementation stems from a siard archive supporting user defined types
 			if (type is ISiardType sType)
 			{
 
 				if (string.IsNullOrEmpty(sType.SuperTypeName) || string.IsNullOrEmpty(sType.SuperTypeSchema))
+				{
+					superSchema = null;
 					return null;
+				}
 
-				return ((IRelationalDataSource)this).FindType(sType.SuperTypeSchema, sType.SuperTypeName);
+				superSchema = ((IRelationalDataSource)this).FindSchema(sType.SuperTypeSchema);
+				return superSchema.FindType(sType.SuperTypeName);
 			}
 				
 			throw new ArgumentException($"Siard V1 doesn't support types");
@@ -88,7 +92,7 @@ namespace Relational2Rdf.DataSources.Siard
 				foreach (var attr in type.Attributes)
 					yield return attr;
 
-				type = GetSuperType(type);
+				type = GetSuperType(type, out _);
 			} while (type != null);
 		}
 

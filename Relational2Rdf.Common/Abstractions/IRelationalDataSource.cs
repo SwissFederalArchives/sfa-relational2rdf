@@ -21,7 +21,7 @@ namespace Relational2Rdf.Common.Abstractions
 		public IType FindType(ISchema schema, string type);
 		public IType FindType(string schema, string type) => FindType(FindSchema(schema), type);
 
-		public IType GetSuperType(IType type);
+		public IType GetSuperType(IType type, out ISchema superTypeSchema);
 		public IEnumerable<IAttribute> GetAllAttributes(IType type);
 
 		public ITableReader GetReader(ISchema schema, ITable table);

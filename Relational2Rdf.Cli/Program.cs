@@ -41,7 +41,7 @@ IConverterFactory GetConversionFactory(ConversionParameters parameters, ILoggerF
 	switch (parameters.ConverterType)
 	{
 		case ConverterType.Ai:
-			return new AiConveterFactory(parameters.BuildAiConfig());
+			return new AiConveterFactory(parameters.BuildAiConfig(), factory);
 
 		case ConverterType.Ontology:
 			return new OntologyTableConverterFactory(parameters.BuildOntologyConfig(), factory);

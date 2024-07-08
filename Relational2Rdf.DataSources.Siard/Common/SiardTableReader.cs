@@ -71,7 +71,7 @@ namespace Relational2Rdf.DataSources.Siard.Common
 				{
 					long len = long.Parse(lenString);
 					var blob = _blobSupply.GetNext();
-					blob.Setup(entry, len, meta.MimeType);
+					blob.Setup(entry, len, meta.MimeType, file);
 					value = blob;
 				}
 			}

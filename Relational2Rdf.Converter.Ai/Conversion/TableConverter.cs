@@ -1,4 +1,5 @@
 ﻿using AwosFramework.Rdf.Lib.Writer;
+using Microsoft.Extensions.Logging;
 using Relational2Rdf.Common.Abstractions;
 using Relational2Rdf.Converter.Ai.Conversion.ConversionMeta;
 using Relational2Rdf.Converter.Ai.Conversion.ReferenceMeta;
@@ -8,6 +9,7 @@ using Relational2Rdf.Converter.Utils;
 using System.Collections.Frozen;
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Numerics;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 
@@ -19,15 +21,17 @@ namespace Relational2Rdf.Converter.Ai.Conversion
 		private ITableReader _reader;
 		private TableConversionSettings _settings;
 		private ConversionContext _ctx;
+		private ILogger _logger;
 		private const string PROFILER_CAT_TABLE_CONVERSION = "TableConversion";
 		private const string PROFILER_CAT_META_CONSTRUCTION = "MetaConstruction";
 
-		public TableConverter(ConversionContext ctx, ITripletWriter writer, ITableReader reader, TableConversionSettings settings)
+		public TableConverter(ConversionContext ctx, ILoggerFactory factory, ITripletWriter writer, ITableReader reader, TableConversionSettings settings)
 		{
 			_ctx = ctx;
 			_writer = writer;
 			_reader = reader;
 			_settings = settings;
+			_logger = factory.CreateLogger<TableConverter>();
 		}
 
 		public async Task ConvertAsync(IProgress progress)
@@ -40,21 +44,25 @@ namespace Relational2Rdf.Converter.Ai.Conversion
 			if (_reader.Table.ForeignKeys.Count() == 2 && _reader.Table.Columns.All(x => referenceColumns.Contains(x.Name)))
 			{
 				IManyToManyReferenceMeta meta;
+				_logger.LogInformation("Setting up meta data for m:m {table}", _reader.Table.Name);
 				using (Profiler.Trace(PROFILER_CAT_META_CONSTRUCTION, _reader.Table.Name, $"Created meta for {_reader.Table.ColumnNames.Count()} columns"))
 				{
 					meta = await MetaBuilder.BuildManyToManyReferencesAsync(_ctx, schemaCtx, _reader.Table);
 				}
 
+				_logger.LogInformation("Converting {table} to rdf", _reader.Table.Name);
 				ConvertManyToMany(_reader, _writer, meta);
 			}
 			else
 			{
 				IConversionMeta meta;
+				_logger.LogInformation("Setting up meta data for normal {table}", _reader.Table.Name);
 				using (Profiler.Trace(PROFILER_CAT_META_CONSTRUCTION, _reader.Table.Name, $"Created meta for {_reader.Table.ColumnNames.Count()} columns"))
 				{
 					meta = await MetaBuilder.BuildConversionMetaAsync(_ctx, schemaCtx, _reader.Table);
 				}
 
+				_logger.LogInformation("Converting {table} to rdf", _reader.Table.Name);
 				ConvertTable(_reader, _writer, meta, progress);
 			}
 		}
@@ -205,7 +213,10 @@ namespace Relational2Rdf.Converter.Ai.Conversion
 				else
 				{
 					if (blob.Length > _settings.MaxBlobLength)
+					{
+						_logger.LogWarning("Blob {id} in table {table} is too large, writing {default} instead", blob.Identifier, _reader.Table.Name, _settings.BlobToLargeErrorValue);
 						return _settings.BlobToLargeErrorValue;
+					}
 
 					var stream = blob.GetStream();
 					if (stream == null)
@@ -233,7 +244,7 @@ namespace Relational2Rdf.Converter.Ai.Conversion
 				return;
 
 			if (attr.CommonType.CanWriteRaw())
-				subject.WriteRaw(meta.GetPredicate(attr), decodedValue);
+				subject.WriteRaw(meta.GetPredicate(attr), decodedValue.ToLower());
 			else
 				subject.Write(meta.GetPredicate(attr), decodedValue);
 		}

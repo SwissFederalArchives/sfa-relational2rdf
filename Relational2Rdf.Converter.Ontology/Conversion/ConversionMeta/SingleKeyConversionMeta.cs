@@ -23,10 +23,9 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 		public IDictionary<IAttribute, IRI> PredicateNames { get; init; }
 		public string KeyColumn { get; init; }
 		public bool NeedsEscaping { get; init; }
-		public FrozenDictionary<IAttribute, string> AttributeCellNames { get; init; }
+		public FrozenDictionary<IAttribute, AttributeItemInfo> AttributeItemInfos { get; init; }
 		public IRI RowBaseIri { get; init; }
-
-		public string GetKey(IRow row) => NeedsEscaping ? ((string)row[KeyColumn]).PrefixEscape() : (string)row[KeyColumn];
+		public string GetKey(IRow row) => NeedsEscaping ? ((string)row[KeyColumn]).IriEscape() : (string)row[KeyColumn];
 		public IConversionMeta GetNestedMeta(IAttribute attr) => NestedMetas[attr];
 		public IRI GetPredicate(IAttribute attr) => PredicateNames[attr];
 	}

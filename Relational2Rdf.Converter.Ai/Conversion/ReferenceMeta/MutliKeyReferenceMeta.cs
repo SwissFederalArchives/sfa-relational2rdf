@@ -16,7 +16,7 @@ namespace Relational2Rdf.Converter.Ai.Conversion.ReferenceMeta
 		public IRI TargeTypeIri { get; init; }
 		public string[] ForeignKeyColumns { get; init; }
 
-		public string GetTargetKey(IRow row) => string.Join("+", ForeignKeyColumns.Select(x => (string)row[x])).PrefixEscape();
+		public string GetTargetKey(IRow row) => string.Join("+", ForeignKeyColumns.Select(x => (string)row[x])).IriEscape();
 
 	}
 }

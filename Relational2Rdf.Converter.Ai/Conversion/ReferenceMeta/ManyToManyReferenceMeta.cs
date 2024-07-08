@@ -24,7 +24,7 @@ namespace Relational2Rdf.Converter.Ai.Conversion.ReferenceMeta
 			if (SourceColumns.Length == 1)
 				return (string)row[SourceColumns[0]];
 			else
-				return string.Join("+", SourceColumns.Select(x => (string)row[x])).PrefixEscape();
+				return string.Join("+", SourceColumns.Select(x => (string)row[x])).IriEscape();
 		}
 
 		public string GetTargetKey(IRow row)
@@ -32,7 +32,7 @@ namespace Relational2Rdf.Converter.Ai.Conversion.ReferenceMeta
 			if (TargetColumns.Length == 1)
 				return (string)row[TargetColumns[0]];
 			else
-				return string.Join("+", TargetColumns.Select(x => (string)row[x])).PrefixEscape();
+				return string.Join("+", TargetColumns.Select(x => (string)row[x])).IriEscape();
 
 		}
 	}

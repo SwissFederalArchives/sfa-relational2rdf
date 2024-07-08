@@ -5,7 +5,9 @@ using Microsoft.VisualBasic;
 using Relational2Rdf.Common.Abstractions;
 using Relational2Rdf.Converter.Display;
 using Relational2Rdf.Converter.Utils;
+using Relational2Rdf.Converter.Worker;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -15,36 +17,36 @@ using System.Threading.Tasks;
 
 namespace Relational2Rdf.Converter
 {
-    public class ConversionsManager : IDisposable
+	public class ConversionsManager : IDisposable
 	{
-		private readonly RunnerGroup<SchemaTable, SchemaTable, ConversionEngine> _runnerGroup;
 		private readonly ConverterSettings _settings;
 		private readonly IConverterFactory _factory;
 		private readonly ConsoleDisplay _display;
 		private readonly DirectoryInfo _outputFolder;
 		private readonly ILogger _logger;
-		private readonly Dictionary<Runner<SchemaTable, SchemaTable, ConversionEngine>, ConversionEngine> _engines;
+		private readonly ConversionEngine[] _engines;
+		private readonly TaskManager<ConversionEngine, SchemaTable> _taskManager;
 
 		public ConversionsManager(ConverterSettings settings, IConverterFactory factory, ILoggerFactory loggerFactory)
 		{
 			_settings = settings;
 			_factory = factory;
 			_logger = loggerFactory.CreateLogger<ConversionsManager>();
-			_runnerGroup = new RunnerGroup<SchemaTable, SchemaTable, ConversionEngine>("Relation2Rdf_Runners", ConvertImpl);
+			_engines = new ConversionEngine[_settings.ThreadCount];
 			for (int i = 0; i < _settings.ThreadCount; i++)
 			{
 				_logger.LogInformation("Creating runner {0}", i);
-				var engine = new ConversionEngine(_factory);
-				var runner = new Runner<SchemaTable, SchemaTable, ConversionEngine>(_runnerGroup, engine);
+				_engines[i] = new ConversionEngine(_factory);
 			}
 
-			_runnerGroup.OnResult +=_runnerGroup_OnResult;
-			_runnerGroup.OnError += _runnerGroup_OnError;	
+			_taskManager = new TaskManager<ConversionEngine, SchemaTable>(_engines, loggerFactory);
+			_taskManager.OnError += _taskManager_OnError;
+			_taskManager.OnSuccess += _taskManager_OnSuccess;
 
 			if (_settings.ConsoleOutput)
 			{
-				_display = new ConsoleDisplay(loggerFactory, _runnerGroup.Jobs, _runnerGroup.Runners.Select(x => x.Engine));
-				foreach (var engine in _runnerGroup.Runners.Select(x => x.Engine))
+				_display = new ConsoleDisplay(loggerFactory, _taskManager.Jobs, _engines);
+				foreach (var engine in _engines)
 				{
 					engine.Progress.OnUpdate += (_) => _display?.UpdateEngine(engine);
 					engine.Progress.OnSetup += (_) => _display?.UpdateQueue();
@@ -52,20 +54,14 @@ namespace Relational2Rdf.Converter
 			}
 		}
 
-		private void _runnerGroup_OnError(object source, SchemaTable input, Exception ex)
+		private void _taskManager_OnSuccess(ConversionEngine engine, SchemaTable job)
 		{
-			_logger.LogError(ex, "Error converting {0}.{1}", input.Schema.Name, input.Table.Name);
+			_logger.LogInformation("Converted {0}.{1} successfully", job.Schema.Name, job.Table.Name);
 		}
 
-		private void _runnerGroup_OnResult(object sender, SchemaTable result)
+		private void _taskManager_OnError(ConversionEngine engine, SchemaTable job, Exception ex)
 		{
-			_logger.LogInformation("Converted {0}.{1} successfully", result.Schema.Name, result.Table.Name);
-		}
-
-		private SchemaTable ConvertImpl(ConversionEngine engine, SchemaTable table)
-		{
-			engine.ConvertAsync(table.Schema, table.Table).GetAwaiter().GetResult();
-			return table;
+			_logger.LogError(ex, "Error converting {0}.{1}", job.Schema.Name, job.Table.Name);
 		}
 
 		public async Task<string> ConvertAsync(IRelationalDataSource source)
@@ -74,20 +70,18 @@ namespace Relational2Rdf.Converter
 			var writer = WriterFactory.TurtleWriter(outputFile);
 			using (Profiler.Trace("InitializeConversionFactory", source.Name))
 				await _factory.InitAsync(writer, source);
-			
+
 			var jobs = source.Schemas.SelectMany(schema => schema.Tables.Select(table => new SchemaTable(schema, table)));
-			_runnerGroup.QueueJobs(jobs);
+			_taskManager.AddJobs(jobs);
 			_display?.UpdateQueue();
-			_runnerGroup.StartAll();
-			await _runnerGroup.AwaitAllDone();
-			_runnerGroup.StopAll();
+			await _taskManager.RunAsync();
+			writer.Dispose();
 			return outputFile;
 		}
 
 
 		public void Dispose()
 		{
-			_runnerGroup?.Dispose();
 		}
 	}
 }

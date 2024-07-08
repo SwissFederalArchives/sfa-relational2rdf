@@ -40,25 +40,30 @@ namespace Relational2Rdf.Converter.Ontology
 		public Task ConvertAsync(IProgress progress)
 		{
 			_logger.LogInformation("Begin converting table {0}", _reader.Table.Name);
-			var tableIri = _ctx.GetTypeIri(_reader.Schema, _reader.Table);
+			var tableIri = _ctx.GetTableIri(_reader.Schema, _reader.Table);
 			var meta = MetaBuilder.BuildConversionMeta(_ctx, _reader.Schema, _reader.Table);
 
-
-			while (_reader.ReadNext(out var row))
+			using (Profiler.Trace(nameof(OntologyTableConverter), _reader.Table.Name, "Converting table to RDF"))
 			{
-				var rowKey = meta.GetKey(row);
-				var rowIri = meta.RowBaseIri.Extend(rowKey);
-				var sub = _writer.BeginSubject(rowIri);
-				WriteRow(meta, row, sub, rowKey, rowIri);
-				_writer.EndSubject(sub);
-				progress.Increment();
+				while (_reader.ReadNext(out var row))
+				{
+					var rowKey = meta.GetKey(row);
+					var rowIri = meta.RowBaseIri.Extend(rowKey);
+					var sub = _writer.BeginSubject(rowIri);
+					sub.Write(_ctx.HasTablePredicate, tableIri);				
+					WriteRow(meta, row, sub, rowKey, rowIri);
+					_writer.EndSubject(sub);
+					_writer.Write(tableIri, _ctx.HasRowPredicate, rowIri);
+					progress.Increment();
+				}
 			}
 
 			return Task.CompletedTask;
 		}
 
-		private void WriteCellValue(object obj, IConversionMeta meta, IAttribute attr, ISubjectWriter subject)
+		private void WriteCellValue(IRow row, IConversionMeta meta, IAttribute attr, ISubjectWriter subject)
 		{
+			var obj = row.GetItem(attr.Name);
 			switch (attr.AttributeType)
 			{
 				case AttributeType.Value:
@@ -98,34 +103,35 @@ namespace Relational2Rdf.Converter.Ontology
 		private void WriteRow(IConversionMeta meta, IRow row, ISubjectWriter subject, string rowKey, IRI rowIri)
 		{
 			subject.WriteSubjectType(_ctx.SiardIri, "Row");
-			var cells = subject.BeginObjectList(P("hasCell"));
-			foreach(var (attr, cellName) in meta.AttributeCellNames)
+			var cells = subject.BeginObjectList(_ctx.HasCellPredicate);
+			foreach (var attr in meta.AttributeItemInfos.Values)
 			{
-				var cellIri = rowIri.Extend(cellName);
+				var cellIri = rowIri.Extend(attr.CellName);
 				cells.Write(cellIri);
 				var cell = _writer.BeginSubject(cellIri);
 				cell.WriteSubjectType(_ctx.SiardIri, "Cell");
-				cell.Write(P("hasRow"), rowIri);
-				WriteCellValue(row.GetItem(attr.Name), meta, attr, cell);
+				cell.Write(_ctx.HasRowPredicate, rowIri);
+				cell.Write(_ctx.HasColumnPredicate, attr.AttributeIri);
+				WriteCellValue(row, meta, attr.Attribute, cell);
 				_writer.EndSubject(cell);
 			}
 
-			foreach(var reference in meta.References)
+			foreach (var reference in meta.References)
 			{
 				var targetKey = reference.GetTargetKey(row);
 				if (targetKey == null)
 					continue;
 
-				var targetIri = reference.TargeTypeIri.Extend(targetKey);
+				var targetIri = reference.TargetRowIri.Extend(targetKey);
 				var referenceIri = meta.TypeIri.Extend("reference").Extend(rowKey).Extend(HttpUtility.UrlEncode(reference.ForeignKey.Name));
 				var sub = _writer.BeginSubject(referenceIri);
 				sub.WriteSubjectType(_ctx.SiardIri, "Reference");
 				sub.Write(_ctx.ReferencedRowPredicate, targetIri);
 				sub.Write(_ctx.IsOfKeyPredicate, reference.ForeignKeyIri);
 				_writer.EndSubject(sub);
-				foreach(var attr in reference.SourceAttributes)
+				foreach (var attr in reference.SourceAttributes)
 				{
-					var cellIri = rowIri.Extend(meta.AttributeCellNames[attr]);
+					var cellIri = rowIri.Extend(meta.AttributeItemInfos[attr].CellName);
 					_writer.Write(cellIri, _ctx.HasReferencePredicate, referenceIri);
 					_writer.Write(referenceIri, _ctx.IsReferencedByPredicate, cellIri);
 				}
@@ -155,7 +161,7 @@ namespace Relational2Rdf.Converter.Ontology
 				return;
 
 			if (attr.CommonType.CanWriteRaw())
-				subject.WriteRaw(_ctx.ValuePredicate, decodedValue);
+				subject.WriteRaw(_ctx.ValuePredicate, decodedValue.ToLower()); // to lower in case of boolean
 			else
 				subject.Write(_ctx.ValuePredicate, decodedValue);
 		}
@@ -199,7 +205,10 @@ namespace Relational2Rdf.Converter.Ontology
 				else
 				{
 					if (blob.Length > _settings.MaxBlobLength)
+					{
+						_logger.LogWarning("Blob {id} in table {table} is too large, writing {default} instead", blob.Identifier, _reader.Table.Name, _settings.BlobToLargeErrorValue);
 						return _settings.BlobToLargeErrorValue;
+					}
 
 					var stream = blob.GetStream();
 					if (stream == null)

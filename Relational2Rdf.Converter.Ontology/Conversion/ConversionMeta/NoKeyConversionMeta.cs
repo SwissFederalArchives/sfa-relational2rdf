@@ -19,13 +19,12 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 		public IDictionary<IAttribute, IConversionMeta> NestedMetas { get; init; }
 		public IDictionary<IAttribute, IRI> PredicateNames { get; init; }
 		public AtomicCounter Counter { get; init; }
-
-		public FrozenDictionary<IAttribute, string> AttributeCellNames { get; init; }
+		public FrozenDictionary<IAttribute, AttributeItemInfo> AttributeItemInfos { get; init; }
 		public IRI RowBaseIri { get; init; }
 
 		public IReferenceMeta[] References { get; init; }
 
-		public string GetKey(IRow row) => Counter.GetNext().ToString();
+		public string GetKey(IRow row) => Counter.GetNext().ToString(); 
 		public IConversionMeta GetNestedMeta(IAttribute attr) => NestedMetas[attr];
 		public IRI GetPredicate(IAttribute attr) => PredicateNames[attr];
 	}

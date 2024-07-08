@@ -47,59 +47,106 @@ namespace Relational2Rdf.Converter.Ontology
 			sub.Write(P("dbname"), source.Name);
 			sub.Write(P("dataOwner"), source.DataOwner);
 			sub.Write(P("producerApplication"), source.ProducerApplication);
+			var schemas = sub.BeginObjectList(P("hasSchema"));
 			foreach (var schema in source.Schemas)
-			{
-				sub.Write(P("hasSchema"), _ctx.GetSchemaIri(schema));
-				WriteSchema(schema);
-			}
+				schemas.Write(WriteSchema(schema));
 
+			sub.EndObjectList(schemas);
 			_writer.EndSubject(sub);
 		}
 
-		private void WriteSchema(ISchema schema)
+		private IRI WriteSchema(ISchema schema)
 		{
-			var sub = _writer.BeginSubject(_ctx.GetSchemaIri(schema));
+			var iri = _ctx.GetSchemaIri(schema);
+			var sub = _writer.BeginSubject(iri);
 			sub.WriteSubjectType(_ctx.SiardIri, "Schema");
 			sub.Write(_ctx.NamePredicate, schema.Name);
-			var tables = sub.BeginObjectList(_ctx.SiardIri.Extend("hasTable"));
-			foreach (var table in schema.Tables)
-			{
-				tables.Write(_ctx.GetTypeIri(schema, table));
-				WriteTable(schema, table);
-			}
 
+			var tables = sub.BeginObjectList(P("hasTable"));
+			foreach (var table in schema.Tables)
+				tables.Write(WriteTable(schema, table));
+			
 			sub.EndObjectList(tables);
+			var types = sub.BeginObjectList(P("hasType"));
+			foreach (var type in schema.Types)
+				types.Write(WriteType(schema, type));
+
+			sub.EndObjectList(types);
 			_writer.EndSubject(sub);
+			return iri;
 		}
 
-		private void WriteTable(ISchema schema, ITable table)
+		private IRI WriteType(ISchema schema, IType type)
 		{
-			var sub = _writer.BeginSubject(_ctx.GetTypeIri(schema, table));
+			var iri = _ctx.GetTypeIri(schema, type);
+			var sub = _writer.BeginSubject(iri);
+			sub.WriteSubjectType(_ctx.SiardIri, "Type");
+			sub.Write(_ctx.NamePredicate, type.Name);
+			sub.Write(P("description"), type.Description);
+			sub.Write(P("final"), type.Final);
+			sub.Write(P("type"), type.Type.ToString());
+			sub.Write(P("hasSchema"), _ctx.GetSchemaIri(schema));
+
+
+			if (type.HasSuperType)
+			{
+				var superType = _ctx.DataSource.GetSuperType(type, out var superSchema);
+				var superIri = _ctx.GetTypeIri(superSchema, superType);
+				sub.Write(P("hasSuperType"), superIri);
+				_writer.Write(superIri, P("isSuperTypeOf"), iri);
+			}
+
+			var attributes = sub.BeginObjectList(P("hasAttributes"));
+			foreach(var attr in _ctx.DataSource.GetAllAttributes(type))	
+				attributes.Write(WriteAttribute(schema, type, attr));
+
+			sub.EndObjectList(attributes);
+			_writer.EndSubject(sub);
+			return iri;
+		}
+
+		private IRI WriteAttribute(ISchema schema, IType type, IAttribute attribute)
+		{
+			var iri = _ctx.GetAttributeIri(schema, type, attribute);
+			var sub = _writer.BeginSubject(iri);
+			sub.WriteSubjectType(_ctx.SiardIri, "Attribute");
+			sub.Write(_ctx.NamePredicate, attribute.Name);
+			sub.Write(P("description"), attribute.Description);
+			sub.Write(P("nullable"), attribute.Nullable);
+			sub.Write(P("defaultValue"), attribute.DefaultValue);
+			sub.Write(P("sourceType"), attribute.SourceType);
+			sub.Write(P("originalSourceType"), attribute.OriginalSourceType);
+			HandleUdtType(attribute, iri, sub);
+			_writer.EndSubject(sub);
+			return iri;
+		}
+
+
+		private IRI WriteTable(ISchema schema, ITable table)
+		{
+			var iri = _ctx.GetTableIri(schema, table);
+			var sub = _writer.BeginSubject(iri);
 			sub.WriteSubjectType(_ctx.SiardIri, "Table");
 			sub.Write(_ctx.NamePredicate, table.Name);
 			sub.Write(P("description"), table.Description);
 			sub.Write(P("rows"), table.RowCount);
+			sub.Write(P("hasSchema"), _ctx.GetSchemaIri(schema));
 			var columns = sub.BeginObjectList(P("hasColumn"));
 			foreach (var column in table.Columns)
-			{
-				columns.Write(_ctx.GetColumnIri(schema, table, column));
-				WriteColumn(schema, table, column);
-			}
-
+				columns.Write(WriteColumn(schema, table, column));
+			
 			sub.EndObjectList(columns);
 			var fKeys = sub.BeginObjectList(P("hasForeignKey"));
 			foreach(var fKey in table.ForeignKeys)
-			{
-				fKeys.Write(_ctx.GetForeignKeyIri(schema, table, fKey));
-				WriteForeignKey(schema, table, fKey);
-			}
-
+				fKeys.Write(WriteForeignKey(schema, table, fKey));
+		
 			sub.EndObjectList(fKeys);
 			_writer.EndSubject(sub);
+			return iri;
 		}
 
 
-		private void WriteForeignKey(ISchema schema, ITable table, IForeignKey key)
+		private IRI WriteForeignKey(ISchema schema, ITable table, IForeignKey key)
 		{
 			var refSchema = _ctx.DataSource.FindSchema(key.ReferencedSchema);
 			var refTable = _ctx.DataSource.FindTable(refSchema, key.ReferencedTable);
@@ -108,7 +155,7 @@ namespace Relational2Rdf.Converter.Ontology
 			sub.WriteSubjectType(_ctx.SiardIri, "ForeignKey");
 			sub.Write(_ctx.NamePredicate, key.Name);
 			sub.Write(P("referencedSchema"), _ctx.GetSchemaIri(refSchema));
-			sub.Write(P("referencedTable"), _ctx.GetTypeIri(refSchema, refTable));
+			sub.Write(P("referencedTable"), _ctx.GetTableIri(refSchema, refTable));
 			var refCols = sub.BeginObjectList(P("references"));
 
 			foreach (var rerefence in key.References)
@@ -116,6 +163,7 @@ namespace Relational2Rdf.Converter.Ontology
 
 			sub.EndObjectList(refCols);
 			_writer.EndSubject(sub);
+			return keyIri;
 		}
 
 		private IRI WriteReference(IForeignKey key, IColumnReference reference, IRI keyIri, ISchema schema, ITable table)
@@ -135,9 +183,20 @@ namespace Relational2Rdf.Converter.Ontology
 			return refIri;
 		}
 
-		private void WriteColumn(ISchema schema, ITable table, IColumn column)
+		private void HandleUdtType(IAttribute attribute, IRI attrIri, ISubjectWriter subject)
 		{
-			var sub = _writer.BeginSubject(_ctx.GetColumnIri(schema, table, column));
+			if(attribute.AttributeType == AttributeType.Udt || attribute.AttributeType == AttributeType.UdtArray)
+			{
+				var typeIri = _ctx.GetTypeIri(attribute.UdtSchema, attribute.UdtType);
+				subject.Write(P("hasUserDefinedType"), typeIri);
+				_writer.Write(typeIri, P("isTypeOf"), attrIri);
+			}
+		}
+
+		private IRI WriteColumn(ISchema schema, ITable table, IColumn column)
+		{
+			var iri = _ctx.GetColumnIri(schema, table, column);
+			var sub = _writer.BeginSubject(iri);
 			sub.WriteSubjectType(_ctx.SiardIri, "Column");
 			sub.Write(_ctx.NamePredicate, column.Name);
 			sub.Write(P("description"), column.Description);
@@ -145,7 +204,10 @@ namespace Relational2Rdf.Converter.Ontology
 			sub.Write(P("defaultValue"), column.DefaultValue);
 			sub.Write(P("sourceType"), column.SourceType);
 			sub.Write(P("originalSourceType"), column.OriginalSourceType);
+			sub.Write(P("cardinality"), column.Cardinality ?? 1);
+			HandleUdtType(column, iri, sub);
 			_writer.EndSubject(sub);
+			return iri;
 		}
 	}
 }

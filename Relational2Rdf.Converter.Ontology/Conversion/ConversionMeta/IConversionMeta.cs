@@ -19,7 +19,7 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 		public string GetKey(IRow row);
 		public IConversionMeta GetNestedMeta(IAttribute attr);
 		public IAttribute[] Attributes { get; }
-		public FrozenDictionary<IAttribute, string> AttributeCellNames { get; }
+		public FrozenDictionary<IAttribute, AttributeItemInfo> AttributeItemInfos { get; }
 		public IReferenceMeta[] References { get;  }
 	}
 }

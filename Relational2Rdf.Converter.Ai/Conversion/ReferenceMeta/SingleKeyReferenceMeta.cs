@@ -1,5 +1,6 @@
 ﻿using AwosFramework.Rdf.Lib.Core;
 using Relational2Rdf.Common.Abstractions;
+using Relational2Rdf.Converter.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,6 @@ namespace Relational2Rdf.Converter.Ai.Conversion.ReferenceMeta
 		public IRI TargeTypeIri { get; init; }
 		public string ForeignKeyColumn { get; init; }
 
-		public string GetTargetKey(IRow row) => (string)row[ForeignKeyColumn];
+		public string GetTargetKey(IRow row) => row[ForeignKeyColumn]?.ToString()?.IriEscape();
 	}
 }

@@ -54,6 +54,9 @@ namespace Relational2Rdf.Converter.Display
 			if (_lastWidth <= 6)
 				return string.Empty;
 
+			if (progress > 1)
+				progress = 1;
+
 			var maxBarLen = _lastWidth - 30; // 30 = 2 * 1 divider + 20 chars name + 8 chars percentage
 			if (maxBarLen < 0)
 			{

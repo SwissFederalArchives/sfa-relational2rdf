@@ -2,7 +2,7 @@
   "profiles": {
     "Relational2Rdf.Cli": {
       "commandName": "Project",
-      "commandLineArgs": "siard C:\\Users\\flori\\Desktop\\Resources\\stapfer.siard -v Ontology -e https://ollama.devprxy.com -k zCYxrXE5D4ZfD5fqGJ5nirBSVKVP7pxV -m llama3:70b --trace --table-config ./table-config.json --ai-service Ollama --trace"
+      "commandLineArgs": "siard C:\\Users\\flori\\Desktop\\Resources\\stapfer.siard -v Ontology -k sk-proj-nPb7ruEn30NWF3xzkHhST3BlbkFJIorLcWVGduaKNt1eEI9O -m gpt-4o --trace --table-config ./table-config.json --ai-service OpenAi --trace -f stapfer-ontology.ttl"
     }
   }
 }

@@ -22,9 +22,9 @@ namespace Relational2Rdf.Converter.Ontology.Conversion.ConversionMeta
 		public IDictionary<IAttribute, IRI> PredicateNames { get; init; }
 		public string[] KeyColumns { get; init; }
 		public IRI RowBaseIri { get; init; }
-		public FrozenDictionary<IAttribute, string> AttributeCellNames { get; init; }
-
-		public string GetKey(IRow row) => string.Join("+", KeyColumns.Select(x => (string)row[x])).PrefixEscape();
+		public FrozenDictionary <IAttribute, AttributeItemInfo> AttributeItemInfos{ get; init; }
+		public string GetKey(IRow row) => string.Join("+", KeyColumns.Select(x => (string)row[x])).IriEscape();
+	
 		public IConversionMeta GetNestedMeta(IAttribute attr) => NestedMetas[attr];
 		public IRI GetPredicate(IAttribute attr) => PredicateNames[attr];
 	}

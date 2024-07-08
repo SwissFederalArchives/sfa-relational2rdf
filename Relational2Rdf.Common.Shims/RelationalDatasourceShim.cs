@@ -43,7 +43,7 @@ namespace Relation2Rdf.Common.Shims
 			return schema.Types.FirstOrDefault(x => x.Name == type);
 		}
 
-		public IType GetSuperType(IType type) => _base.GetSuperType(type);
+		public IType GetSuperType(IType type, out ISchema schema) => _base.GetSuperType(type, out schema);
 
 		public IEnumerable<IAttribute> GetAllAttributes(IType type) => _base.GetAllAttributes(type);
 
