@@ -5,6 +5,7 @@ using Relation2Rdf.Common.Shims;
 using Relational2Rdf.Common.Abstractions;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -96,7 +97,7 @@ namespace Relational2Rdf.Converter.Ontology
 				_writer.Write(superIri, P("isSuperTypeOf"), iri);
 			}
 
-			var attributes = sub.BeginObjectList(P("hasAttributes"));
+			var attributes = sub.BeginObjectList(P("hasAttribute"));
 			foreach(var attr in _ctx.DataSource.GetAllAttributes(type))	
 				attributes.Write(WriteAttribute(schema, type, attr));
 
@@ -116,6 +117,8 @@ namespace Relational2Rdf.Converter.Ontology
 			sub.Write(P("defaultValue"), attribute.DefaultValue);
 			sub.Write(P("sourceType"), attribute.SourceType);
 			sub.Write(P("originalSourceType"), attribute.OriginalSourceType);
+			sub.Write(P("cardinality"), attribute.Cardinality ?? 1);
+
 			HandleUdtType(attribute, iri, sub);
 			_writer.EndSubject(sub);
 			return iri;
