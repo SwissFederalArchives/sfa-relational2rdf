@@ -71,4 +71,4 @@ The data itself is transformed into a knowledgegraph and meta data about it's or
 `Relational2Rdf.Cli(.exe) siard [Siard File] --table-config table-config.json --threads 8 --ai-key <your open ai key> -v Ai`
 
 ## Download
-https://github.com/fhgr-retrolab/Relational2Rdf/releases/tag/v1.1.0
+https://github.com/SwissFederalArchives/sfa-relational2Rdf/releases/tag/v1.1.0
