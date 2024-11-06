@@ -378,7 +378,7 @@ namespace Relational2Rdf.DataSources.Siard.SiardV1
     [XmlTypeAttribute(Namespace="http://www.bar.admin.ch/xmlns/siard/1.0/metadata.xsd", TypeName="matchTypeType")]
     [XmlRootAttribute("matchTypeType")]
     public enum MatchTypeTypeV1
-	{
+	  {
         FULL,
         PARTIAL,
         SIMPLE,

@@ -28,7 +28,7 @@ namespace Relational2Rdf.DataSources.Siard.SiardV1
 
 		public int RowCount => int.Parse(this.Rows);
 
-		IEnumerable<IForeignKey> ITable.ForeignKeys => this.foreignKeys;
+		IEnumerable<IForeignKey> ITable.ForeignKeys => this.foreignKeys ?? Array.Empty<IForeignKey>();
 
 		IEnumerable<IColumn> ITable.Columns => this.columns.Cast<IColumn>();
 
@@ -55,7 +55,7 @@ namespace Relational2Rdf.DataSources.Siard.SiardV1
 
 	public partial class ForeignKeyTypeV1 : IForeignKey
 	{
-		public IEnumerable<IColumnReference> References => this.References;
+		public IEnumerable<IColumnReference> References => this.Reference;
 	}
 
 	public partial class ReferenceTypeV1 : IColumnReference

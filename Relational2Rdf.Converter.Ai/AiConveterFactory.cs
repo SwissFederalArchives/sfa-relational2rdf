@@ -62,7 +62,11 @@ namespace Relational2Rdf.Converter.Ai
 
 			// check if foreign keys are present
 			var tableCount = dataSource.Schemas.Sum(x => x.Tables.Count());
-			var fkCount = dataSource.Schemas.SelectMany(x => x.Tables).SelectMany(x => x.ForeignKeys).Count();
+			var fkCount = dataSource.Schemas.SelectMany(x => x.Tables)
+				.Where(x => x.ForeignKeys != null)
+				.SelectMany(x => x.ForeignKeys)
+				.Count();
+
 			if (_settings.ReconstructMissingRelationships && fkCount == 0 && tableCount > 1)
 			{
 				_logger.LogInformation("Restoring missing foreign keys");

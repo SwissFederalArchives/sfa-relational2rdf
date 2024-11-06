@@ -53,7 +53,7 @@ namespace Relational2Rdf.Cli
 
 		[HasDefaultValue]
 		[Option("output", ['o'], Description = "Output directory for converted archive")]
-		public DirectoryInfo OutputDirectory { get; set; } = new DirectoryInfo("./");
+		public string OutputDirectory { get; set; } = "./";
 
 		[HasDefaultValue]
 		[Option("output-file", ['f'], Description = "Output file name for converted archive")]
@@ -78,7 +78,7 @@ namespace Relational2Rdf.Cli
 				ThreadCount = ThreadCount,
 				ConsoleOutput = NoConsoleOutput == false,
 				FileName = OutputFileName,
-				OutputDir = OutputDirectory,
+				OutputDir = new DirectoryInfo(OutputDirectory),
 			};
 		}
 
